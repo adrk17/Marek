@@ -1,0 +1,147 @@
+{
+  "name": "Level 1 - All Enemy Types",
+  "models": [
+    {
+      "id": "ground1",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": -15, "y": -0.5, "z": 0 },
+      "size": { "x": 18, "y": 1, "z": 10 }
+    },
+    {
+      "id": "ground2",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 5, "y": -0.5, "z": 0 },
+      "size": { "x": 11, "y": 1, "z": 10 }
+    },
+    {
+      "id": "ground3",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 20, "y": -0.5, "z": 0 },
+      "size": { "x": 15, "y": 1, "z": 10 }
+    },
+    {
+      "id": "platform1",
+      "type": "platform",
+      "colliderType": "solid",
+      "position": { "x": -10, "y": 2, "z": 0 },
+      "size": { "x": 4, "y": 0.5, "z": 2 }
+    },
+    {
+      "id": "platform2",
+      "type": "platform",
+      "colliderType": "solid",
+      "position": { "x": -2, "y": 3.5, "z": 0 },
+      "size": { "x": 3, "y": 0.5, "z": 2 }
+    },
+    {
+      "id": "platform3",
+      "type": "platform",
+      "colliderType": "solid",
+      "position": { "x": 8, "y": 2.5, "z": 0 },
+      "size": { "x": 3.5, "y": 0.5, "z": 2 }
+    },
+    {
+      "id": "platform4",
+      "type": "platform",
+      "colliderType": "solid",
+      "position": { "x": 18, "y": 3, "z": 0 },
+      "size": { "x": 4, "y": 0.5, "z": 2 }
+    },
+    {
+      "id": "coin1",
+      "type": "coin",
+      "colliderType": "trigger",
+      "position": { "x": -10, "y": 3, "z": 0 },
+      "size": { "x": 0.6, "y": 0.6, "z": 0.6 },
+      "value": 1
+    },
+    {
+      "id": "coin2",
+      "type": "coin",
+      "colliderType": "trigger",
+      "position": { "x": 8, "y": 3.5, "z": 0 },
+      "size": { "x": 0.6, "y": 0.6, "z": 0.6 },
+      "value": 1
+    },
+    {
+      "id": "coin3",
+      "type": "coin",
+      "colliderType": "trigger",
+      "position": { "x": 18, "y": 4, "z": 0 },
+      "size": { "x": 0.6, "y": 0.6, "z": 0.6 },
+      "value": 1
+    }
+  ],
+  "enemies": [
+    {
+      "id": "grzegorz1",
+      "type": "grzegorz",
+      "position": { "x": -18, "y": 1, "z": 0 },
+      "patrolDistance": 3,
+      "speed": 2
+    },
+    {
+      "id": "grzegorz2",
+      "type": "grzegorz",
+      "position": { "x": -15, "y": 1, "z": 0 },
+      "patrolDistance": 2,
+      "speed": 1.5
+    },
+    {
+      "id": "grzegorz3",
+      "type": "grzegorz",
+      "position": { "x": -10, "y": 3, "z": 0 },
+      "patrolDistance": 1.5,
+      "speed": 2
+    },
+    {
+      "id": "kacper1",
+      "type": "kacper",
+      "position": { "x": 6, "y": 1, "z": 0 },
+      "patrolDistance": 3,
+      "speed": 3.5
+    },
+    {
+      "id": "kacper2",
+      "type": "kacper",
+      "position": { "x": 9, "y": 1, "z": 0 },
+      "patrolDistance": 2.5,
+      "speed": 3
+    },
+    {
+      "id": "pawel_jumper1",
+      "type": "pawel_jumper",
+      "position": { "x": 20, "y": 1, "z": 0 },
+      "patrolDistance": 2,
+      "speed": 1.5,
+      "jumpInterval": 2,
+      "jumpForce": 20
+    },
+    {
+      "id": "pawel_jumper2",
+      "type": "pawel_jumper",
+      "position": { "x": 24, "y": 1, "z": 0 },
+      "patrolDistance": 1.5,
+      "speed": 2,
+      "jumpInterval": 1.5,
+      "jumpForce": 20
+    },
+    {
+      "id": "patroller_wide_grzegorz",
+      "type": "grzegorz",
+      "position": { "x": -12, "y": 1, "z": 0 },
+      "patrolDistance": 8,
+      "speed": 2.5
+    },
+    {
+      "id": "patroller_wide_kacper",
+      "type": "kacper",
+      "position": { "x": 22, "y": 1, "z": 0 },
+      "patrolDistance": 10,
+      "speed": 4
+    }
+  ]
+}
