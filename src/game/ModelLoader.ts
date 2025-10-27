@@ -1,6 +1,7 @@
 import type { Collider } from '../engine/physics';
 import { ColliderType } from '../engine/collision';
-import type { Vec3 } from '../engine/types';
+import type { Vec2, Vec3 } from '../engine/types';
+import { createStairs as createStairsFactory } from './factories/StairsFactory';
 
 export interface LevelData {
   name: string;
@@ -10,10 +11,12 @@ export interface LevelData {
 
 export interface ModelDefinition {
   id: string;
-  type: 'ground' | 'platform' | 'wall' | 'player' | 'enemy' | 'coin' | 'custom';
+  type: 'ground' | 'platform' | 'wall' | 'player' | 'enemy' | 'coin' | 'custom' | 'stairs';
   colliderType: ColliderType;
   position: Vec3;
   size: Vec3;
+  /** Optional per-step offset for 'stairs' models. Defaults to size.x/size.y. */
+  step?: Vec2; // { x: strideX, y: strideY }
   x3dUrl?: string; // Optional X3D model file, if not provided uses default shape
   color?: string; // Optional custom color for default shape (RGB format: "r g b")
   value?: number; // For coins - point value
@@ -39,14 +42,19 @@ export class ModelLoader {
     const colliders: Collider[] = [];
 
     for (const model of levelData.models) {
-      this.loadModelWithFallback(model);
-
-      colliders.push({
-        pos: model.position,
-        size: model.size,
-        type: model.type,
-        colliderType: model.colliderType
-      });
+      if (model.type === 'stairs') {
+        // Expand stairs into multiple step blocks via factory
+        const stepColliders = createStairsFactory(model);
+        colliders.push(...stepColliders);
+      } else {
+        this.loadModelWithFallback(model);
+        colliders.push({
+          pos: model.position,
+          size: model.size,
+          type: model.type,
+          colliderType: model.colliderType
+        });
+      }
     }
 
     return colliders;
@@ -105,6 +113,9 @@ export class ModelLoader {
           break;
         case 'platform':
           color = '0.85 0.75 0.55'; // sandy beige
+          break;
+        case 'stairs':
+          color = '0.85 0.75 0.55'; // same as platform
           break;
         case 'player':
           color = '0.9 0.25 0.25'; // strong red
@@ -172,9 +183,6 @@ export class ModelLoader {
         case 'pawel_jumper':
           color = '0.9 0.6 0.2'; // Orange (jumps)
           break;
-        //case 'cezary':
-        //  color = '0.8 0.2 0.8'; // Purple (chases player)
-        //  break;
         default:
           color = '0.9 0.2 0.2'; // Red (fallback)
       }

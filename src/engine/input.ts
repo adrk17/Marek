@@ -49,7 +49,6 @@ export class Input {
   pausePressed(): boolean {
     const pressed = this.keys.has(this.controls.pause);
     if (pressed) {
-      // Remove key so it doesn't trigger continuously
       this.keys.delete(this.controls.pause);
     }
     return pressed;
@@ -58,7 +57,6 @@ export class Input {
   isKeyPressed(key: string): boolean {
     const pressed = this.keys.has(key) || this.keyCodes.has(key);
     if (pressed) {
-      // Remove key so it doesn't trigger continuously
       this.keys.delete(key);
       this.keyCodes.delete(key);
     }

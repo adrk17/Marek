@@ -15,6 +15,7 @@ export interface PlayerConfig {
   };
   deathHeight: number;
   deathAnimationDuration: number;
+  deathAnimation?: PlayerDeathAnimationConfig;
 }
 
 export interface CameraConfig {
@@ -23,6 +24,10 @@ export interface CameraConfig {
   rotation: number;
   fieldOfView: number;
   smoothing?: number;
+  minX?: number;
+  maxX?: number;
+  offsetX?: number;
+  lookAheadFactor?: number;
 }
 
 export interface ControlsConfig {
@@ -58,6 +63,7 @@ export interface EnemyConfig {
     height: number;
     depth: number;
   };
+  shellSpeed?: number;
 }
 
 export interface GameConfig {
@@ -68,6 +74,17 @@ export interface GameConfig {
   skybox: SkyboxConfig;
   coin: CoinConfig;
   enemy: EnemyConfig;
+}
+
+export interface PlayerDeathAnimationConfig {
+  freezeDuration: number;
+  horizontalFactor: number;
+  verticalFactor: number;
+  zSpeed: number;
+  rotSpeed: number;
+  maxScale: number;
+  scaleRate: number;
+  damping: number;
 }
 
 export const DEFAULT_CONFIG: GameConfig = {
@@ -87,14 +104,27 @@ export const DEFAULT_CONFIG: GameConfig = {
       y: 1
     },
     deathHeight: -10,     
-    deathAnimationDuration: 2 
+    deathAnimationDuration: 2,
+    deathAnimation: {
+      freezeDuration: 1,
+      horizontalFactor: 0.6,
+      verticalFactor: 1.1,
+      zSpeed: 6,
+      rotSpeed: 5,
+      maxScale: 1.3,
+      scaleRate: 0.2,
+      damping: 1.5
+    }
   },
   camera: {
-    offsetY: 4,
-    offsetZ: 14,
-    rotation: 0.3,
+    offsetY: 6.5,
+    offsetZ: 16,
+    rotation: 0.2,
     fieldOfView: 0.785,
-    smoothing: 0.1
+    smoothing: 0.4,
+    minX: -4,
+    offsetX: 6,
+    
   },
   controls: {
     left: 'ArrowLeft',
@@ -108,7 +138,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   skybox: {
     textureUrl: undefined,  // Optional texture path
-    fallbackColor: "0.12 0.16 0.28", 
+    fallbackColor: "0.56 0.83 1.0", 
     radius: 50
   },
   coin: {
@@ -132,7 +162,8 @@ export function createConfig(overrides?: Partial<GameConfig>): GameConfig {
       ...DEFAULT_CONFIG.player, 
       ...overrides?.player,
       size: { ...DEFAULT_CONFIG.player.size, ...overrides?.player?.size },
-      startPosition: { ...DEFAULT_CONFIG.player.startPosition, ...overrides?.player?.startPosition }
+      startPosition: { ...DEFAULT_CONFIG.player.startPosition, ...overrides?.player?.startPosition },
+      deathAnimation: { ...DEFAULT_CONFIG.player.deathAnimation!, ...overrides?.player?.deathAnimation }
     },
     camera: { ...DEFAULT_CONFIG.camera, ...overrides?.camera },
     controls: { ...DEFAULT_CONFIG.controls, ...overrides?.controls },

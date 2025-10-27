@@ -38,22 +38,29 @@ export function resolveEntity(
 
     if (dyT > 0 && dyT < dyB && dyT <= Math.min(dxR, dxL)) {
       next.y += dyT;
-      v.y = 0;
-      onGround = true;
+      if (v.y <= 0) { // only set onGround and v.y = 0 if falling down (prevents sticking to the platform when colliding from the side
+        v.y = 0;
+        onGround = true;
+      }
       a.y = next.y;
     } else if (dyB > 0 && dyB <= Math.min(dxR, dxL)) {
       next.y -= dyB;
       v.y = Math.min(0, v.y);
       hitHead = true;
       a.y = next.y;
-    } else if (dxR > 0 && dxR < dxL) {
-      next.x += dxR;
-      v.x = Math.min(0, v.x);
-      a.x = next.x;
     } else {
-      next.x -= dxL;
-      v.x = Math.max(0, v.x);
-      a.x = next.x;
+      // Side collision: resolve based on relative centers to avoid "teleporting"
+      // If the entity's center is left of the collider's center, keep it on the left side, and vice versa.
+      const entityLeftOfCollider = a.x < b.x;
+      if (entityLeftOfCollider) {
+        next.x -= dxL; // place player's right edge at collider's left edge
+        v.x = Math.min(0, v.x);
+        a.x = next.x;
+      } else {
+        next.x += dxR; // place player's left edge at collider's right edge
+        v.x = Math.max(0, v.x);
+        a.x = next.x;
+      }
     }
   }
   

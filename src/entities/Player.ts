@@ -3,13 +3,14 @@ import { setTranslation } from '../engine/x3d';
 import type { AABB, Vec2, Vec3 } from '../engine/types';
 import type { PlayerConfig, PhysicsConfig } from '../config/GameConfig';
 import { type ICollidable, ColliderType } from '../engine/collision';
+import { DeathAnimation } from './animation/DeathAnimation';
 
 enum MovementState {
   IDLE,
   MOVING_RIGHT,
   MOVING_LEFT,
-  SKIDDING_RIGHT,  // Zatrzymywanie się podczas ruchu w prawo
-  SKIDDING_LEFT    // Zatrzymywanie się podczas ruchu w lewo
+  SKIDDING_RIGHT,
+  SKIDDING_LEFT
 }
 
 export class Player implements ICollidable {
@@ -27,6 +28,7 @@ export class Player implements ICollidable {
   private invincible: boolean = false;
   private invincibilityTimer: number = 0;
   private invincibilityDuration: number = 1.5; // 1.5 seconds of invincibility after getting hit
+  private deathAnim: DeathAnimation;
 
   constructor(nodeId: string = 'player', config: PlayerConfig, physics: PhysicsConfig) {
     const element: Element | null = document.getElementById(nodeId);
@@ -39,9 +41,13 @@ export class Player implements ICollidable {
     this.physics = physics;
     this.size = { x: config.size.width, y: config.size.height, z: config.size.depth };
     this.position = { x: config.startPosition.x, y: config.startPosition.y };
+    this.deathAnim = new DeathAnimation(config.deathAnimation!);
   }
 
   update(deltaTime: number, axisX: number, jump: boolean, colliders: Collider[]): void {
+    if (this.deathAnim.isActive()) {
+      return;
+    }
     // Update invincibility timer
     if (this.invincible) {
       this.invincibilityTimer -= deltaTime;
@@ -87,9 +93,6 @@ export class Player implements ICollidable {
   private updateMovementState(axisX: number, deltaTime: number): void {
     const MIN_VELOCITY = 0.1;
     
-    // Determine current direction of movement
-    const isMovingRight = this.velocity.x > MIN_VELOCITY;
-    const isMovingLeft = this.velocity.x < -MIN_VELOCITY;
     const isStopped = Math.abs(this.velocity.x) <= MIN_VELOCITY;
     
     // Input direction
@@ -110,26 +113,22 @@ export class Player implements ICollidable {
         
       case MovementState.MOVING_RIGHT:
         if (pressingLeft) {
-          // Instant stop when changing direction
           this.velocity.x = 0;
           this.movementState = MovementState.IDLE;
         } else if (noInput) {
           this.movementState = MovementState.SKIDDING_RIGHT;
         } else if (pressingRight) {
-          // Continue accelerating right
           this.accelerate(1, deltaTime);
         }
         break;
         
       case MovementState.MOVING_LEFT:
         if (pressingRight) {
-          // Instant stop when changing direction
           this.velocity.x = 0;
           this.movementState = MovementState.IDLE;
         } else if (noInput) {
           this.movementState = MovementState.SKIDDING_LEFT;
         } else if (pressingLeft) {
-          // Continue accelerating left
           this.accelerate(-1, deltaTime);
         }
         break;
@@ -230,6 +229,9 @@ export class Player implements ICollidable {
     this.invincible = false;
     this.invincibilityTimer = 0;
     this.movementState = MovementState.IDLE;
+    this.deathAnim.reset();
+    this.node.removeAttribute('rotation');
+    this.node.removeAttribute('scale');
     setTranslation(this.node, this.position.x, this.position.y, 0);
   }
 
@@ -253,7 +255,7 @@ export class Player implements ICollidable {
 
   // Called when player stomps on enemy - small bounce
   stompBounce(): void {
-    this.velocity.y = this.config.jumpForce * 0.5; // Half jump force for stomp bounce
+    this.velocity.y = this.config.jumpForce * 0.6;
   }
 
   isInvincible(): boolean {
@@ -271,5 +273,15 @@ export class Player implements ICollidable {
 
   getIsDead(): boolean {
     return this.isDead;
+  }
+
+  startDeathAnimation(): void {
+    this.deathAnim.start(this.velocity.x, this.config.maxSpeed, this.config.jumpForce);
+  }
+
+  updateDeath(deltaTime: number): void {
+    if (!this.deathAnim.isActive()) return;
+    this.deathAnim.update(deltaTime, this.physics.gravity, this.position);
+    this.deathAnim.apply(this.node, this.position);
   }
 }

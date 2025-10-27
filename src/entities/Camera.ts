@@ -3,21 +3,45 @@ import type { CameraConfig } from '../config/GameConfig';
 export class Camera {
   private node: Element;
   private config: CameraConfig;
+  private currentX: number;
+  private currentY: number;
+  private smoothing: number;
+  private minX?: number;
+  private maxX?: number;
 
   constructor(nodeId: string = 'cam', config: CameraConfig) {
     const element: Element | null = document.getElementById(nodeId);
     if (!element) throw new Error(`Camera node with id '${nodeId}' not found`);
-    
+
     this.node = element;
     this.config = config;
-    
+    this.smoothing = config.smoothing ?? 0.15;
+
+    this.currentX = 0;
+    this.currentY = this.config.offsetY;
+    this.minX = config.minX;
+    this.maxX = config.maxX;
+
     this.node.setAttribute('orientation', `-1 0 0 ${config.rotation}`);
     this.node.setAttribute('fieldOfView', config.fieldOfView.toString());
+    this.node.setAttribute('position', `${this.currentX.toFixed(3)} ${this.currentY} ${this.config.offsetZ}`);
   }
 
-  followTarget(targetX: number, targetY?: number): void {
-    const y: number = targetY !== undefined ? targetY + this.config.offsetY : this.config.offsetY;
-    const position: string = `${targetX.toFixed(3)} ${y} ${this.config.offsetZ}`;
+  followTarget(targetX: number, targetY?: number, _targetVelX?: number): void {
+    const targetYFinal: number = targetY !== undefined ? targetY + this.config.offsetY : this.config.offsetY;
+
+    const offsetX = this.config.offsetX ?? 0;
+    let desiredX = targetX + offsetX;
+    if (this.minX !== undefined && desiredX < this.minX) desiredX = this.minX;
+    if (this.maxX !== undefined && desiredX > this.maxX) desiredX = this.maxX;
+
+    this.currentX += (desiredX - this.currentX) * this.smoothing;
+
+    if (this.minX !== undefined && this.currentX < this.minX) this.currentX = this.minX;
+    if (this.maxX !== undefined && this.currentX > this.maxX) this.currentX = this.maxX;
+    this.currentY += (targetYFinal - this.currentY) * this.smoothing;
+
+    const position: string = `${this.currentX.toFixed(3)} ${this.currentY.toFixed(3)} ${this.config.offsetZ}`;
     this.node.setAttribute('position', position);
   }
 
@@ -29,6 +53,11 @@ export class Camera {
   setFieldOfView(fov: number): void {
     this.config.fieldOfView = fov;
     this.node.setAttribute('fieldOfView', fov.toString());
+  }
+
+  setBounds(minX?: number, maxX?: number): void {
+    this.minX = minX;
+    this.maxX = maxX;
   }
 
   getConfig(): CameraConfig {

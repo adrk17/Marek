@@ -3,13 +3,20 @@ import type { SkyboxConfig } from '../config/GameConfig';
 export class SkyboxManager {
   private skyboxAppearance: Element | null;
   private skyboxMaterial: Element | null;
+  private skyboxTransform: Element | null;
   private config: SkyboxConfig;
 
   constructor(config: SkyboxConfig) {
     this.config = config;
     this.skyboxAppearance = document.getElementById('skybox-appearance');
     this.skyboxMaterial = document.getElementById('skybox-material');
+    this.skyboxTransform = document.getElementById('skybox');
     this.initialize();
+  }
+
+  setCenter(x: number, y: number = 0, z: number = 0): void {
+    if (!this.skyboxTransform) return;
+    this.skyboxTransform.setAttribute('translation', `${x.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)}`);
   }
 
   private initialize(): void {
@@ -59,13 +66,11 @@ export class SkyboxManager {
     this.skyboxMaterial.setAttribute('emissiveColor', this.config.fallbackColor);
   }
 
-  // Change skybox texture at runtime
   setTexture(textureUrl: string): void {
     this.config.textureUrl = textureUrl;
     this.loadTexture(textureUrl);
   }
 
-  // Change skybox color at runtime
   setColor(color: string): void {
     this.config.fallbackColor = color;
     this.config.textureUrl = undefined;

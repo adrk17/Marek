@@ -3,6 +3,10 @@ import { setTranslation } from '../engine/x3d';
 import type { AABB, Vec2, Vec3 } from '../engine/types';
 import type { PhysicsConfig } from '../config/GameConfig';
 import { type ICollidable, ColliderType } from '../engine/collision';
+import type { EnemyBehavior } from './behaviors/EnemyBehavior';
+import { PatrolBehavior } from './behaviors/PatrolBehavior';
+import { JumperBehavior } from './behaviors/JumperBehavior';
+import { TurtleBehavior } from './behaviors/TurtleBehavior';
 
 export type EnemyBehaviorType = 'grzegorz' | 'kacper' | 'pawel_jumper' //| 'cezary';
 
@@ -13,15 +17,9 @@ export interface EnemyConfig {
   behaviorType?: EnemyBehaviorType;
   jumpInterval?: number;
   jumpForce?: number;
+  shellSpeed?: number;
 }
 
-/**
- * Enemy with multiple behavior types:
- * - grzegorz: Simple patrol (brown)
- * - kacper: Fast patrol (green)
- * - pawel_jumper: Patrol + periodic jumps (orange)
- * - cezary: Follows player when nearby (purple)
- */
 export class Enemy implements ICollidable {
   private node: Element;
   private size: Vec3;
@@ -39,6 +37,7 @@ export class Enemy implements ICollidable {
   private stomped: boolean = false; // Stomped flat, no more collision
   private visualOffsetY: number = 0; // Additional visual offset for stomped enemies
   private jumpTimer: number = 0;
+  private behavior!: EnemyBehavior;
 
   constructor(
     nodeId: string,
@@ -52,15 +51,26 @@ export class Enemy implements ICollidable {
     this.node = element;
     this.config = config;
     this.physics = physics;
-  this.size = { x: config.size.width, y: config.size.height, z: config.size.depth };
-  this.position = { x: startPosition.x, y: startPosition.y };
+    this.size = { x: config.size.width, y: config.size.height, z: config.size.depth };
+    this.position = { x: startPosition.x, y: startPosition.y };
     this.startX = startPosition.x;
     this.startY = startPosition.y;
     this.behaviorType = config.behaviorType || 'grzegorz';
     this.velocity.x = config.speed * this.direction;
+
+    switch (this.behaviorType) {
+      case 'pawel_jumper':
+        this.behavior = new JumperBehavior(this, config.jumpInterval, config.jumpForce);
+        break;
+      case 'kacper':
+        this.behavior = new TurtleBehavior(this, config.shellSpeed);
+        break;
+      default:
+        this.behavior = new PatrolBehavior(this);
+    }
   }
 
-  update(deltaTime: number, colliders: Collider[], otherEnemies?: Enemy[], playerPosition?: { x: number; y: number }): void {
+  update(deltaTime: number, colliders: Collider[], otherEnemies?: Enemy[]): void {
     if (!this.alive) return;
 
     // If stomped, only apply physics (no AI)
@@ -86,12 +96,8 @@ export class Enemy implements ICollidable {
       return;
     }
 
-    // Execute AI based on behavior type
-    switch (this.behaviorType) {
-      case 'pawel_jumper': this.updateJumpingAI(deltaTime); break;
-      //case 'cezary': this.updateChaserAI(deltaTime, playerPosition); break;
-      default: this.updatePatrolAI(deltaTime);
-    }
+    // Execute AI via behavior
+    this.behavior.update(deltaTime);
 
     // Apply physics (gravity always applies)
     this.velocity.y += this.physics.gravity * deltaTime;
@@ -110,18 +116,18 @@ export class Enemy implements ICollidable {
     
     // Check collision with walls (velocity.x becomes 0)
     if (this.velocity.x === 0) {
-      this.direction *= -1;
-      this.velocity.x = this.config.speed * this.direction;
+      this.behavior.onWallBlocked();
     }
 
     // Check collisions with other enemies
     if (otherEnemies) {
       for (const other of otherEnemies) {
-        if (other !== this && !other.isStomped() && this.checkEnemyCollision(other)) {
-          // Reverse both enemies' directions
-          this.direction *= -1;
-          this.velocity.x = this.config.speed * this.direction;
-          other.reverseDirection();
+        if (other !== this && other.isAlive() && !other.isStomped() && this.checkEnemyCollision(other)) {
+          if (!this.behavior.onEnemyCollision(other)) {
+            this.reverseDirection();
+            this.velocity.x = this.config.speed * this.direction;
+            other.reverseDirection();
+          }
         }
       }
     }
@@ -129,65 +135,11 @@ export class Enemy implements ICollidable {
     setTranslation(this.node, this.position.x, this.position.y, 0);
   }
 
-  private updatePatrolAI(deltaTime: number): void {
-    if (Math.abs(this.position.x - this.startX) > this.config.patrolDistance) {
-      this.direction *= -1;
-      this.velocity.x = this.config.speed * this.direction;
-    }
-  }
-
-  private updateJumpingAI(deltaTime: number): void {
-    this.updatePatrolAI(deltaTime);
-    this.jumpTimer += deltaTime;
-    if (this.jumpTimer >= (this.config.jumpInterval || 2) && this.grounded) {
-      this.velocity.y = this.config.jumpForce || 8;
-      this.jumpTimer = 0;
-    }
-  }
-
-//   private updateChaserAI(deltaTime: number, playerPos?: { x: number; y: number }): void {
-//     if (!playerPos) {
-//       this.updatePatrolAI(deltaTime);
-//       return;
-//     }
-//     const dist = Math.abs(this.position.x - playerPos.x);
-//     if (dist < 5) {
-//       // Chase player - only change direction if needed
-//       const targetDirection = this.position.x < playerPos.x ? 1 : -1;
-//       if (this.direction !== targetDirection) {
-//         this.changeDirectionTimer += deltaTime;
-//         if (this.changeDirectionTimer >= 0.4) {
-//           this.direction = targetDirection;
-//           this.velocity.x = this.config.speed * 1.5 * this.direction;
-//           this.changeDirectionTimer = 0;
-//         }
-//       } else {
-//         this.changeDirectionTimer = 0;
-//       }
-//     } else {
-//       // Return to patrol mode
-//       this.updatePatrolAI(deltaTime);
-//       this.changeDirectionTimer = 0;
-//     }
-//   }
-
   checkStomp(player: ICollidable, playerVelocityY: number): boolean {
-    if (!this.alive || this.stomped) return false;
-    const pAABB = player.getAABB();
-    const eAABB = this.getAABB();
-    if (playerVelocityY < 0) {
-      const pBottom = pAABB.y - pAABB.h / 2;
-      const eTop = eAABB.y + eAABB.h / 2;
-      if (Math.abs(pBottom - eTop) < 0.3 &&
-          Math.abs(pAABB.x - eAABB.x) < (pAABB.w + eAABB.w) / 2) {
-        this.defeat();
-        return true;
-      }
-    }
-    return false;
+    return this.behavior.checkStomp(player, playerVelocityY);
   }
 
-   private shrink(): void {
+  public shrink(): void {
     // Shrink visually
     this.node.setAttribute('scale', '0.9 0.3 0.9');
     // Calculate how much to move down so bottom stays at same Y
@@ -197,25 +149,45 @@ export class Enemy implements ICollidable {
   }
 
 
-  private defeat(): void {
+  public defeat(): void {
     this.stomped = true;
     this.velocity.x = 0; // Stop horizontal movement
 
     this.shrink();
   }
   
-
   isStomped(): boolean {
     return this.stomped;
+  }
+
+  // Public: allow other entities (shell) to squash this enemy
+  squash(): void {
+    if (!this.stomped) this.defeat();
+  }
+
+  getPosition(): Vec2 {
+    return { ...this.position };
+  }
+
+  getAlive(): boolean {
+    return this.alive;
+  }
+
+  die(): void {
+    if (!this.alive) return;
+    this.alive = false;
+    // Remove visual node from scene
+    const parent = this.node.parentNode;
+    if (parent) parent.removeChild(this.node);
   }
 
   private checkEnemyCollision(other: Enemy): boolean {
     const thisAABB = this.getAABB();
     const otherAABB = other.getAABB();
     
-    return Math.abs(thisAABB.x - otherAABB.x) * 2 < (thisAABB.w + otherAABB.w) &&
-           Math.abs(thisAABB.y - otherAABB.y) * 2 < (thisAABB.h + otherAABB.h) &&
-           Math.abs(thisAABB.z - otherAABB.z) * 2 < (thisAABB.d + otherAABB.d);
+    return Math.abs(thisAABB.x - otherAABB.x) * 2 <= (thisAABB.w + otherAABB.w) &&
+           Math.abs(thisAABB.y - otherAABB.y) * 2 <= (thisAABB.h + otherAABB.h) &&
+           Math.abs(thisAABB.z - otherAABB.z) * 2 <= (thisAABB.d + otherAABB.d);
   }
 
   reverseDirection(): void {
@@ -224,12 +196,7 @@ export class Enemy implements ICollidable {
   }
 
   damagesPlayer(player: ICollidable): boolean {
-    if (!this.alive || this.stomped) return false; // Stomped enemies don't damage
-    const pAABB = player.getAABB();
-    const eAABB = this.getAABB();
-    return Math.abs(pAABB.x - eAABB.x) * 2 < (pAABB.w + eAABB.w) &&
-           Math.abs(pAABB.y - eAABB.y) * 2 < (pAABB.h + eAABB.h) &&
-           Math.abs(pAABB.z - eAABB.z) * 2 < (pAABB.d + eAABB.d);
+    return this.behavior.damagesPlayer(player);
   }
 
   getAABB(): AABB {
@@ -238,8 +205,19 @@ export class Enemy implements ICollidable {
 
   getType(): string { return 'enemy'; }
   getColliderType(): ColliderType { return ColliderType.SOLID; }
-  isAlive(): boolean { return this.alive && !this.stomped; } // Stomped = not alive for game logic
+  isAlive(): boolean { return this.alive && !this.stomped; }
   getVelocity(): Vec2 { return { ...this.velocity }; }
+
+  // Accessors for behaviors
+  getDirection(): number { return this.direction; }
+  setDirection(dir: number): void { this.direction = dir; }
+  setVelocityX(x: number): void { this.velocity.x = x; }
+  setVelocityY(y: number): void { this.velocity.y = y; }
+  getGrounded(): boolean { return this.grounded; }
+  getStartX(): number { return this.startX; }
+  getConfig(): EnemyConfig { return this.config; }
+  getPhysics(): PhysicsConfig { return this.physics; }
+  nudgeX(dx: number): void { this.position.x += dx; }
 }
 
 
