@@ -133,6 +133,47 @@
       "position": { "x": 22, "y": 0, "z": -3.2 },
       "rotation": { "x": 0, "y": -30, "z": 0 },
       "scale": { "x": 2, "y": 1.5, "z": 2 }
+    },
+    
+    { "id": "goal_pole",
+      "type": "goal",
+      "position": { "x": -7, "y": 3, "z": 0 },
+      "size": { "x": 0.4, "y": 7, "z": 0.4 }
+    },
+    
+    { "id": "mp_vertical_slow",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 30, "y": 2.5, "z": 0 },
+      "size": { "x": 3, "y": 0.5, "z": 2 },
+      "move": { "axis": "y", "amplitude": 1.5, "speed": 1.0, "phase": 0 }
+    },
+    { "id": "mp_vertical_fast",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 35, "y": 3.0, "z": 0 },
+      "size": { "x": 3, "y": 0.5, "z": 2 },
+      "move": { "axis": "y", "amplitude": 2.5, "speed": 2.2, "phase": 0.5 }
+    },
+    { "id": "mp_horizontal_slow",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 45, "y": 2.0, "z": 0 },
+      "size": { "x": 3.5, "y": 0.5, "z": 2 },
+      "move": { "axis": "x", "amplitude": 2.0, "speed": 0.8, "phase": 0 }
+    },
+    { "id": "mp_horizontal_fast",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 52, "y": 3.0, "z": 0 },
+      "size": { "x": 3.5, "y": 0.5, "z": 2 },
+      "move": { "axis": "x", "amplitude": 3, "speed": 1.8, "phase": 1.2 }
+    },
+    { "id": "elev1",
+      "type": "endless_group",
+      "position": { "x": 60, "y": 12.0, "z": 0 },
+      "size": { "x": 3.0, "y": 0.5, "z": 2 },
+      "endless": { "group": "elev1", "count": 20, "speed": 4, "spacing": 2, "bottomY": -10 }
     }
   ],
   "enemies": [

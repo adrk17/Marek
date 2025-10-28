@@ -14,6 +14,10 @@ export interface Collider {
   type?: string;
   node?: Element;
   colliderType?: ColliderType;
+  // Optional motion for moving platforms or similar
+  motion?: { axis: 'x' | 'y'; amplitude: number; speed: number; phase: number };
+  // Endless elevator platforms parameters
+  endless?: { group: string; speed: number; spacing: number; bottomY: number };
 }
 
 export function resolveEntity(

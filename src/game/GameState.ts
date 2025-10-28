@@ -5,6 +5,8 @@ export class GameState {
   private _isGameOver: boolean = false;
   private _isDying: boolean = false;
   private _deathTimer: number = 0;
+  private _isWinning: boolean = false;
+  private _winTimer: number = 0;
 
   get score(): number {
     return this._score;
@@ -30,6 +32,14 @@ export class GameState {
     return this._deathTimer;
   }
 
+  get isWinning(): boolean {
+    return this._isWinning;
+  }
+
+  get winTimer(): number {
+    return this._winTimer;
+  }
+
   addScore(points: number): void {
     this._score += points;
   }
@@ -46,6 +56,12 @@ export class GameState {
     }
   }
 
+  updateWinTimer(deltaTime: number): void {
+    if (this._isWinning) {
+      this._winTimer += deltaTime;
+    }
+  }
+
   startDeathAnimation(): void {
     this._isDying = true;
     this._deathTimer = 0;
@@ -54,6 +70,16 @@ export class GameState {
   finishDeathAnimation(): void {
     this._isDying = false;
     this._deathTimer = 0;
+  }
+
+  startWin(): void {
+    this._isWinning = true;
+    this._winTimer = 0;
+  }
+
+  finishWin(): void {
+    this._isWinning = false;
+    this._winTimer = 0;
   }
 
   pause(): void {
@@ -79,5 +105,7 @@ export class GameState {
     this._isGameOver = false;
     this._isDying = false;
     this._deathTimer = 0;
+    this._isWinning = false;
+    this._winTimer = 0;
   }
 }

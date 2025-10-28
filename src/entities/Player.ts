@@ -29,6 +29,11 @@ export class Player implements ICollidable {
   private invincibilityTimer: number = 0;
   private invincibilityDuration: number = 1.5; // 1.5 seconds of invincibility after getting hit
   private deathAnim: DeathAnimation;
+  // Win animation (goal slide)
+  private goalSlideActive: boolean = false;
+  private goalSlideX: number = 0;
+  private goalSlideBottomY: number = 0;
+  private goalSlideSpeed: number = 0;
 
   constructor(nodeId: string = 'player', config: PlayerConfig, physics: PhysicsConfig) {
     const element: Element | null = document.getElementById(nodeId);
@@ -45,7 +50,7 @@ export class Player implements ICollidable {
   }
 
   update(deltaTime: number, axisX: number, jump: boolean, colliders: Collider[]): void {
-    if (this.deathAnim.isActive()) {
+    if (this.deathAnim.isActive() || this.goalSlideActive) {
       return;
     }
     // Update invincibility timer
@@ -283,5 +288,45 @@ export class Player implements ICollidable {
     if (!this.deathAnim.isActive()) return;
     this.deathAnim.update(deltaTime, this.physics.gravity, this.position);
     this.deathAnim.apply(this.node, this.position);
+  }
+
+  // --- Winning / Goal slide ---
+  startGoalSlide(poleX: number, bottomY: number, slideSpeed: number): void {
+    this.goalSlideActive = true;
+    this.goalSlideX = poleX;
+    this.goalSlideBottomY = bottomY;
+    this.goalSlideSpeed = Math.max(0, slideSpeed);
+    // Snap X to pole, zero velocity
+    this.velocity.x = 0;
+    this.velocity.y = 0;
+    this.position.x = poleX;
+    setTranslation(this.node, this.position.x, this.position.y, 0);
+  }
+
+  isGoalSliding(): boolean {
+    return this.goalSlideActive;
+  }
+
+  updateGoalSlide(deltaTime: number): void {
+    if (!this.goalSlideActive) return;
+    // Move down until bottomY
+    const targetY = this.goalSlideBottomY;
+    if (this.position.y > targetY) {
+      this.position.y = Math.max(targetY, this.position.y - this.goalSlideSpeed * deltaTime);
+      setTranslation(this.node, this.position.x, this.position.y, 0);
+    }
+  }
+
+  stopGoalSlide(): void {
+    this.goalSlideActive = false;
+  }
+
+  // Move player by external delta (e.g., riding platform)
+  applyPlatformDelta(dx: number, dy: number): void {
+    if (this.deathAnim.isActive() || this.goalSlideActive) return;
+    if (dx === 0 && dy === 0) return;
+    this.position.x += dx;
+    this.position.y += dy;
+    setTranslation(this.node, this.position.x, this.position.y, 0);
   }
 }

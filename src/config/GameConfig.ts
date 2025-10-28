@@ -66,6 +66,36 @@ export interface EnemyConfig {
   shellSpeed?: number;
 }
 
+export interface ActivationConfig {
+  // Only entities within this radius from the player are updated
+  enemyUpdateRadius: number;
+  // Slightly larger radius used for player-enemy collision checks to avoid edge popping
+  enemyCollisionRadius?: number;
+}
+
+export interface GoalConfig {
+  poleSlideSpeed: number; // units per second
+  poleBonusMin: number;   // points for bottom
+  poleBonusMax: number;   // points for top
+  timeBonusPerSecond: number; // points awarded for each second saved (inverse bonus)
+  timeBonusCap?: number; // optional max time bonus
+  reloadDelay: number;    // seconds after finish before reload
+}
+
+export interface MovingPlatformsConfig {
+  enabled: boolean;
+  // default oscillation params if level doesn't override
+  defaultAmplitude: number; // units
+  defaultSpeed: number;     // units/sec
+}
+
+export interface EndlessPlatformsConfig {
+  enabled: boolean;
+  defaultSpeed: number;   // units/sec downward
+  defaultSpacing: number; // vertical gap between platforms in group
+  defaultBottomY: number; // recycle when platform top < bottomY
+}
+
 export interface GameConfig {
   player: PlayerConfig;
   camera: CameraConfig;
@@ -74,6 +104,10 @@ export interface GameConfig {
   skybox: SkyboxConfig;
   coin: CoinConfig;
   enemy: EnemyConfig;
+  activation: ActivationConfig;
+  goal: GoalConfig;
+  movingPlatforms: MovingPlatformsConfig;
+  endlessPlatforms: EndlessPlatformsConfig;
 }
 
 export interface PlayerDeathAnimationConfig {
@@ -153,6 +187,29 @@ export const DEFAULT_CONFIG: GameConfig = {
       height: 0.8,
       depth: 0.8
     }
+  },
+  activation: {
+    enemyUpdateRadius: 24,
+    enemyCollisionRadius: 26
+  },
+  goal: {
+    poleSlideSpeed: 3.5,
+    poleBonusMin: 100,
+    poleBonusMax: 1000,
+    timeBonusPerSecond: 5,
+    timeBonusCap: 5000,
+    reloadDelay: 2
+  },
+  movingPlatforms: {
+    enabled: true,
+    defaultAmplitude: 2,
+    defaultSpeed: 0.6
+  },
+  endlessPlatforms: {
+    enabled: true,
+    defaultSpeed: 1.2,
+    defaultSpacing: 2.5,
+    defaultBottomY: -6
   }
 };
 
@@ -174,6 +231,10 @@ export function createConfig(overrides?: Partial<GameConfig>): GameConfig {
       ...DEFAULT_CONFIG.enemy, 
       ...overrides?.enemy,
       size: { ...DEFAULT_CONFIG.enemy.size, ...overrides?.enemy?.size }
-    }
+    },
+    activation: { ...DEFAULT_CONFIG.activation, ...(overrides as any)?.activation }
+    ,goal: { ...DEFAULT_CONFIG.goal, ...(overrides as any)?.goal }
+    ,movingPlatforms: { ...DEFAULT_CONFIG.movingPlatforms, ...(overrides as any)?.movingPlatforms }
+    ,endlessPlatforms: { ...DEFAULT_CONFIG.endlessPlatforms, ...(overrides as any)?.endlessPlatforms }
   };
 }

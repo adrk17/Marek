@@ -2,6 +2,18 @@ import type { Collider } from '../engine/physics';
 import type { Enemy } from '../entities/Enemy';
 import type { Player } from '../entities/Player';
 
+function isWithinRadius(enemy: Enemy, px: number, py: number, radius: number): boolean {
+  const pos = enemy.getPosition();
+  const dx = pos.x - px;
+  const dy = pos.y - py;
+  return (dx * dx + dy * dy) <= radius * radius;
+}
+
+export function getActiveEnemies(enemies: Enemy[], px: number, py: number, radius: number): Enemy[] {
+  if (!isFinite(radius) || radius <= 0) return enemies;
+  return enemies.filter(e => isWithinRadius(e, px, py, radius));
+}
+
 export function updateEnemies(enemies: Enemy[], deltaTime: number, colliders: Collider[]): void {
   for (const enemy of enemies) {
     enemy.update(deltaTime, colliders, enemies);
@@ -31,4 +43,3 @@ export function handleEnemyCollisions(enemies: Enemy[], player: Player): void {
     }
   }
 }
-

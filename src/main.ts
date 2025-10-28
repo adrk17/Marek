@@ -10,9 +10,12 @@ import { ModelLoader } from './game/ModelLoader';
 import { SkyboxManager } from './game/SkyboxManager';
 import { DEFAULT_CONFIG, createConfig, type GameConfig } from './config/GameConfig';
 import type { Collider } from './engine/physics';
-import { updateEnemies as updateEnemiesSys, cullFallen as cullFallenSys, handleEnemyCollisions as handleEnemyCollisionsSys } from './systems/enemies';
-import { collectCoins as collectCoinsSys } from './systems/coins';
+import { updateEnemies, cullFallen, handleEnemyCollisions, getActiveEnemies } from './systems/enemies';
+import { collectCoins } from './systems/coins';
 import { getIntent } from './systems/input';
+import { detectGoalHit } from './systems/goals';
+import { buildMovingPlatforms, updateMovingPlatforms, computeRideDeltaForPlayer, type MovingPlatformState } from './systems/platforms';
+import { buildEndlessPlatforms, updateEndlessPlatforms, computeVerticalRideDeltaForPlayer, type EndlessPlatformState } from './systems/endlessPlatforms';
 
 class Game {
   private input: Input;
@@ -25,6 +28,8 @@ class Game {
   private colliders: Collider[];
   private coins: Coin[];
   private enemies: Enemy[];
+  private movingPlatforms: MovingPlatformState[] = [];
+  private endlessPlatforms: EndlessPlatformState[] = [];
   private lastTime: number = 0;
   private config: GameConfig;
   private levelLoaded: boolean = false;
@@ -121,6 +126,10 @@ class Game {
       console.log(`- Models: ${this.colliders.length}`);
       console.log(`- Coins: ${this.coins.length}`);
       console.log(`- Enemies: ${this.enemies.length}`);
+
+      // Build moving platforms list from colliders
+      this.movingPlatforms = buildMovingPlatforms(this.colliders, this.config.movingPlatforms);
+      this.endlessPlatforms = buildEndlessPlatforms(this.colliders, this.config.endlessPlatforms);
     } catch (error) {
       console.error('Failed to load level:', error);
     }
@@ -171,23 +180,55 @@ class Game {
 
   private update(deltaTime: number): void {
     if (!this.levelLoaded) return;
-    
-    const { axisX, jump } = getIntent(this.input, this.player.isGrounded());
 
-    this.player.update(deltaTime, axisX, jump, this.colliders);
+    const { axisX, jump } = getIntent(this.input, this.player.isGrounded());
+    
+    // During winning animation, do not process normal input update
+    if (this.gameState.isWinning) {
+      this.player.updateGoalSlide(deltaTime);
+    } else {
+      this.player.update(deltaTime, axisX, jump, this.colliders);
+    }
     
     const playerPosition = this.player.getPosition();
     this.camera.followTarget(playerPosition.x, undefined, this.player.getVelocity().x);
     // Keep skybox centered on player X to avoid parallax drift
     this.skyboxManager.setCenter(playerPosition.x, 0, 0);
 
-    // Update and cull enemies via system helpers
-    updateEnemiesSys(this.enemies, deltaTime, this.colliders);
-    this.enemies = cullFallenSys(this.enemies, this.config.player.deathHeight);
-    handleEnemyCollisionsSys(this.enemies, this.player);
+    // Moving platforms
+    if (this.movingPlatforms.length) {
+      updateMovingPlatforms(this.movingPlatforms, deltaTime);
+      // Apply platform carry if grounded and not in win flow
+      if (!this.gameState.isWinning && this.player.isGrounded()) {
+        const ride = computeRideDeltaForPlayer(this.player.getAABB(), this.movingPlatforms);
+        if (ride.dx !== 0 || ride.dy !== 0) {
+          this.player.applyPlatformDelta(ride.dx, ride.dy);
+        }
+      }
+    }
+    if (this.endlessPlatforms.length) {
+      updateEndlessPlatforms(this.endlessPlatforms, deltaTime);
+      if (!this.gameState.isWinning && this.player.isGrounded()) {
+        const vdy = computeVerticalRideDeltaForPlayer(this.player.getAABB(), this.endlessPlatforms);
+        if (vdy !== 0) {
+          this.player.applyPlatformDelta(0, vdy);
+        }
+      }
+    }
+
+    // Update and cull enemies via system helpers, using activation radius around player
+    const activeUpdateRadius = this.config.activation.enemyUpdateRadius;
+    const activeCollisionRadius = this.config.activation.enemyCollisionRadius ?? activeUpdateRadius;
+
+    const activeForUpdate = getActiveEnemies(this.enemies, playerPosition.x, playerPosition.y, activeUpdateRadius);
+    updateEnemies(activeForUpdate, deltaTime, this.colliders);
+    this.enemies = cullFallen(this.enemies, this.config.player.deathHeight);
+
+    const activeForCollisions = getActiveEnemies(this.enemies, playerPosition.x, playerPosition.y, activeCollisionRadius);
+    handleEnemyCollisions(activeForCollisions, this.player);
 
     // Coins
-    const gained = collectCoinsSys(this.coins, this.player);
+    const gained = collectCoins(this.coins, this.player);
     if (gained > 0) {
       this.gameState.addScore(gained);
       this.uiManager.updateScore(this.gameState.score);
@@ -195,6 +236,34 @@ class Game {
     
     this.gameState.updateTime(deltaTime);
     this.uiManager.updateTime(this.gameState.time);
+
+    // Goal detection and finishing flow
+    if (!this.gameState.isWinning) {
+      const hit = detectGoalHit(this.colliders, this.player);
+      if (hit) {
+        // Compute bonuses
+        const cfg = this.config.goal;
+        const ratio = Math.max(0, Math.min(1, hit.ratio));
+        const poleBonus = Math.round(cfg.poleBonusMin + (cfg.poleBonusMax - cfg.poleBonusMin) * ratio);
+        const maxSecondsForBonus = 300; // configurable later if needed
+        let timeBonus = Math.max(0, Math.round(cfg.timeBonusPerSecond * Math.max(0, maxSecondsForBonus - this.gameState.time)));
+        if (cfg.timeBonusCap !== undefined) timeBonus = Math.min(timeBonus, cfg.timeBonusCap);
+        const totalBonus = poleBonus + timeBonus;
+        if (totalBonus > 0) {
+          this.gameState.addScore(totalBonus);
+          this.uiManager.updateScore(this.gameState.score);
+        }
+
+        // Start winning animation (stick to pole and slide down)
+        this.gameState.startWin();
+        this.player.startGoalSlide(hit.poleX, hit.bottomY, cfg.poleSlideSpeed);
+      }
+    } else {
+      this.gameState.updateWinTimer(deltaTime);
+      if (this.gameState.winTimer >= this.config.goal.reloadDelay) {
+        this.finishLevel();
+      }
+    }
   }
 
   private handlePlayerDeath(): void {
@@ -210,6 +279,12 @@ class Game {
     this.gameState.finishDeathAnimation();
     this.uiManager.hideDeath();
     
+    window.location.reload();
+  }
+
+  private finishLevel(): void {
+    console.log('Level finished!');
+    this.gameState.finishWin();
     window.location.reload();
   }
 

@@ -11,17 +11,20 @@ export interface LevelData {
 
 export interface ModelDefinition {
   id: string;
-  type: 'ground' | 'platform' | 'wall' | 'player' | 'enemy' | 'coin' | 'custom' | 'stairs' | 'decor';
+  type: 'ground' | 'platform' | 'wall' | 'player' | 'enemy' | 'coin' | 'custom' | 'stairs' | 'decor' | 'goal' | 'moving_platform' | 'endless_platform' | 'endless_group';
   colliderType?: ColliderType; // Optional for 'decor'
   position: Vec3;
   size?: Vec3; // Optional for 'decor'
-  /** Optional per-step offset for 'stairs' models. Defaults to size.x/size.y. */
   step?: Vec2; // { x: strideX, y: strideY }
   x3dUrl?: string; // Optional X3D model file, if not provided uses default shape
   color?: string; // Optional custom color for default shape (RGB format: "r g b")
   value?: number; // For coins - point value
   rotation?: Vec3; // Optional Euler rotation in degrees (XYZ)
   scale?: number | Vec3; // Optional scale (uniform or per-axis)
+  // Optional movement definition for moving platforms
+  move?: { axis?: 'x' | 'y'; amplitude?: number; speed?: number; phase?: number };
+  // Endless elevator platforms grouping/behavior
+  endless?: { group?: string; speed?: number; spacing?: number; bottomY?: number; spawnMargin?: number; count?: number };
 }
 
 export interface EnemyDefinition {
@@ -50,15 +53,69 @@ export class ModelLoader {
         colliders.push(...stepColliders);
       } else if (model.type === 'decor') {
         this.loadModelWithFallback(model);
+      } else if (model.type === 'goal') {
+        // Goal trigger: always a trigger collider, slim vertical box
+        const sized: Vec3 = model.size ?? { x: 0.4, y: 6, z: 0.4 };
+        this.loadModelWithFallback({ ...model, size: sized, color: model.color ?? '1 1 1' });
+        const node = document.getElementById(model.id) as Element | null;
+        colliders.push({
+          pos: model.position,
+          size: sized,
+          type: 'goal',
+          colliderType: ColliderType.TRIGGER,
+          node: node ?? undefined
+        });
+      } else if (model.type === 'endless_group') {
+        // Generate multiple endless elevator platforms from a single group definition
+        const groupName = model.endless?.group ?? model.id;
+        const speed = model.endless?.speed ?? 0;
+        const spacing = model.endless?.spacing ?? 2.5;
+        const bottomY = model.endless?.bottomY ?? -6;
+        const count = Math.max(1, Math.floor(model.endless?.count ?? 3));
+        const size = model.size ?? { x: 3, y: 0.5, z: 2 };
+        const x = model.position.x;
+        const z = model.position.z;
+        const topY = model.position.y;
+        for (let i = 0; i < count; i++) {
+          const y = topY - i * (spacing + size.y);
+          const id = `${groupName}_${i}`;
+          this.loadModelWithFallback({ id, type: 'endless_platform' as any, position: { x, y, z }, size, color: model.color });
+          const node = document.getElementById(id) as Element | null;
+          colliders.push({
+            pos: { x, y, z },
+            size,
+            type: 'endless_platform',
+            colliderType: ColliderType.SOLID,
+            node: node ?? undefined,
+            endless: { group: groupName, speed, spacing, bottomY }
+          });
+        }
       } else {
         this.loadModelWithFallback(model);
         if (model.size && model.colliderType) {
-          colliders.push({
+          const node = document.getElementById(model.id) as Element | null;
+          const collider = {
             pos: model.position,
             size: model.size,
             type: model.type,
-            colliderType: model.colliderType
-          });
+            colliderType: model.colliderType,
+            node: node ?? undefined
+          } as Collider;
+          if (model.type === 'moving_platform') {
+            const axis = model.move?.axis ?? 'y';
+            const amplitude = model.move?.amplitude ?? 0;
+            const speed = model.move?.speed ?? 0;
+            const phase = model.move?.phase ?? 0;
+            collider.motion = { axis, amplitude, speed, phase };
+          } else if (model.type === 'endless_platform') {
+            // Endless elevator platform
+            const group = model.endless?.group ?? 'default';
+            const speed = model.endless?.speed ?? 0;
+            const spacing = model.endless?.spacing ?? 0;
+            const bottomY = model.endless?.bottomY ?? -6;
+            collider.endless = { group, speed, spacing, bottomY };
+          }
+          colliders.push(collider);
         }
       }
     }
