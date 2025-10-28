@@ -11,15 +11,17 @@ export interface LevelData {
 
 export interface ModelDefinition {
   id: string;
-  type: 'ground' | 'platform' | 'wall' | 'player' | 'enemy' | 'coin' | 'custom' | 'stairs';
-  colliderType: ColliderType;
+  type: 'ground' | 'platform' | 'wall' | 'player' | 'enemy' | 'coin' | 'custom' | 'stairs' | 'decor';
+  colliderType?: ColliderType; // Optional for 'decor'
   position: Vec3;
-  size: Vec3;
+  size?: Vec3; // Optional for 'decor'
   /** Optional per-step offset for 'stairs' models. Defaults to size.x/size.y. */
   step?: Vec2; // { x: strideX, y: strideY }
   x3dUrl?: string; // Optional X3D model file, if not provided uses default shape
   color?: string; // Optional custom color for default shape (RGB format: "r g b")
   value?: number; // For coins - point value
+  rotation?: Vec3; // Optional Euler rotation in degrees (XYZ)
+  scale?: number | Vec3; // Optional scale (uniform or per-axis)
 }
 
 export interface EnemyDefinition {
@@ -44,16 +46,20 @@ export class ModelLoader {
     for (const model of levelData.models) {
       if (model.type === 'stairs') {
         // Expand stairs into multiple step blocks via factory
-        const stepColliders = createStairsFactory(model);
+        const stepColliders = createStairsFactory(model as ModelDefinition & { size: Vec3 });
         colliders.push(...stepColliders);
+      } else if (model.type === 'decor') {
+        this.loadModelWithFallback(model);
       } else {
         this.loadModelWithFallback(model);
-        colliders.push({
-          pos: model.position,
-          size: model.size,
-          type: model.type,
-          colliderType: model.colliderType
-        });
+        if (model.size && model.colliderType) {
+          colliders.push({
+            pos: model.position,
+            size: model.size,
+            type: model.type,
+            colliderType: model.colliderType
+          });
+        }
       }
     }
 
@@ -72,25 +78,58 @@ export class ModelLoader {
     transform.setAttribute('class', model.type);
     transform.setAttribute('id', model.id);
 
-    if (model.x3dUrl) {
+    // Build nested rotation transforms if rotation provided (Euler XYZ in degrees)
+    let targetParent: Element = transform;
+    if (model.rotation) {
+      const rx = (model.rotation.x || 0) * Math.PI / 180;
+      const ry = (model.rotation.y || 0) * Math.PI / 180;
+      const rz = (model.rotation.z || 0) * Math.PI / 180;
+
+      const tX: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
+      tX.setAttribute('rotation', `1 0 0 ${rx}`);
+      const tY: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
+      tY.setAttribute('rotation', `0 1 0 ${ry}`);
+      const tZ: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
+      tZ.setAttribute('rotation', `0 0 1 ${rz}`);
+      transform.appendChild(tX);
+      tX.appendChild(tY);
+      tY.appendChild(tZ);
+      targetParent = tZ;
+    }
+
+    // Apply scale to the target parent if provided
+    if (model.scale !== undefined && model.scale !== null) {
+      if (typeof model.scale === 'number') {
+        const s = model.scale;
+        targetParent.setAttribute('scale', `${s} ${s} ${s}`);
+      } else {
+        const sx = model.scale.x ?? 1;
+        const sy = model.scale.y ?? 1;
+        const sz = model.scale.z ?? 1;
+        targetParent.setAttribute('scale', `${sx} ${sy} ${sz}`);
+      }
+    }
+
+    const url = model.x3dUrl;
+    if (url) {
       // Try to load external X3D model
       const inline: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Inline');
-      inline.setAttribute('url', model.x3dUrl);
+      inline.setAttribute('url', url);
       
       // Add error handler - if model fails to load, append default shape
       inline.addEventListener('load', () => {
-        console.log(`Loaded X3D model: ${model.x3dUrl}`);
+        console.log(`Loaded X3D model: ${url}`);
       });
       
       inline.addEventListener('error', () => {
-        console.warn(`Failed to load X3D model: ${model.x3dUrl}, using default shape`);
-        transform.appendChild(this.createDefaultShape(model));
+        console.warn(`Failed to load X3D model: ${url}, using default shape`);
+        targetParent.appendChild(this.createDefaultShape(model));
       });
       
-      transform.appendChild(inline);
+      targetParent.appendChild(inline);
     } else {
       const shape: Element = this.createDefaultShape(model);
-      transform.appendChild(shape);
+      targetParent.appendChild(shape);
     }
 
     scene.appendChild(transform);
@@ -126,6 +165,9 @@ export class ModelLoader {
         case 'coin':
           color = '1.0 0.8 0.0'; // gold
           break;
+        case 'decor':
+          color = '0.6 0.2 0.8'; // purple for decorative fallback
+          break;
         default:
           color = '0.6 0.6 0.6'; // gray
       }
@@ -147,7 +189,10 @@ export class ModelLoader {
 
     // Create box geometry with specified size
     const box: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Box');
-    box.setAttribute('size', `${model.size.x} ${model.size.y} ${model.size.z}`);
+    const sx = model.size?.x ?? 1;
+    const sy = model.size?.y ?? 1;
+    const sz = model.size?.z ?? 1;
+    box.setAttribute('size', `${sx} ${sy} ${sz}`);
     shape.appendChild(box);
 
     return shape;

@@ -122,12 +122,23 @@ export class Enemy implements ICollidable {
     // Check collisions with other enemies
     if (otherEnemies) {
       for (const other of otherEnemies) {
-        if (other !== this && other.isAlive() && !other.isStomped() && this.checkEnemyCollision(other)) {
-          if (!this.behavior.onEnemyCollision(other)) {
-            this.reverseDirection();
-            this.velocity.x = this.config.speed * this.direction;
-            other.reverseDirection();
-          }
+        if (other === this || !other.isAlive() || other.isStomped()) continue;
+        if (!this.checkEnemyCollision(other)) continue;
+
+        // Priority: lethal enemies (e.g., moving shell) always defeat the other on contact
+        if (typeof other.isLethalToEnemies === 'function' && other.isLethalToEnemies()) {
+          this.die();
+          continue;
+        }
+        if (typeof this.isLethalToEnemies === 'function' && this.isLethalToEnemies()) {
+          other.die();
+          continue;
+        }
+
+        if (!this.behavior.onEnemyCollision(other)) {
+          this.reverseDirection();
+          this.velocity.x = this.config.speed * this.direction;
+          other.reverseDirection();
         }
       }
     }
@@ -207,6 +218,7 @@ export class Enemy implements ICollidable {
   getColliderType(): ColliderType { return ColliderType.SOLID; }
   isAlive(): boolean { return this.alive && !this.stomped; }
   getVelocity(): Vec2 { return { ...this.velocity }; }
+  isLethalToEnemies(): boolean { return typeof this.behavior.isLethalToEnemies === 'function' ? !!this.behavior.isLethalToEnemies() : false; }
 
   // Accessors for behaviors
   getDirection(): number { return this.direction; }

@@ -3,7 +3,7 @@ import { ColliderType } from '../../engine/collision';
 import type { Vec2, Vec3 } from '../../engine/types';
 import type { ModelDefinition } from '../../game/ModelLoader';
 
-export function createStairs(model: ModelDefinition): Collider[] {
+export function createStairs(model: ModelDefinition & { size: Vec3 }): Collider[] {
   const scene: Element | null = document.querySelector('scene');
   if (!scene) return [];
 
@@ -47,4 +47,3 @@ export function createStairs(model: ModelDefinition): Collider[] {
   }
   return colliders;
 }
-

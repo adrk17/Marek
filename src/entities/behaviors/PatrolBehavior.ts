@@ -66,4 +66,6 @@ export class PatrolBehavior implements EnemyBehavior {
            Math.abs(pAABB.y - eAABB.y) * 2 < (pAABB.h + eAABB.h) &&
            Math.abs(pAABB.z - eAABB.z) * 2 < (pAABB.d + eAABB.d);
   }
+
+  isLethalToEnemies(): boolean { return false; }
 }

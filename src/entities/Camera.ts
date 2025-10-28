@@ -17,8 +17,8 @@ export class Camera {
     this.config = config;
     this.smoothing = config.smoothing ?? 0.15;
 
-    this.currentX = 0;
-    this.currentY = this.config.offsetY;
+    this.currentX = this.config.offsetX ?? 0;
+    this.currentY = this.config.offsetY ?? 0;
     this.minX = config.minX;
     this.maxX = config.maxX;
 

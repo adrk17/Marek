@@ -40,5 +40,6 @@ export class JumperBehavior implements EnemyBehavior {
   damagesPlayer(player: ICollidable): boolean {
     return this.patrol.damagesPlayer(player);
   }
-}
 
+  isLethalToEnemies(): boolean { return false; }
+}

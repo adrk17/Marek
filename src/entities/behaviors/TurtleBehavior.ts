@@ -121,6 +121,10 @@ export class TurtleBehavior implements EnemyBehavior {
     return true; // walking hurts
   }
 
+  isLethalToEnemies(): boolean {
+    return this.state === 'shell_moving';
+  }
+
   private enterShell(): void {
     this.state = 'shell_stationary';
     this.host.setVelocityX(0);

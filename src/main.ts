@@ -86,7 +86,7 @@ class Game {
           return new Coin(
             coinElement as Element,
             { 
-              size: model.size.x,
+              size: model.size!.x,
               value: model.value || this.config.coin.value 
             }
           );
