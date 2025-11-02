@@ -13,6 +13,7 @@
   <x3d id="x3d-scene">
     <scene>
       <!-- ==================== CAMERA ==================== -->
+      <!-- all parameters controlled via game config -->
       <viewpoint 
         id="cam" 
         position="0 4 14" 
@@ -20,7 +21,7 @@
         fieldOfView="0.785">
       </viewpoint>
       
-      <!-- ==================== LIGHTING ==================== -->
+      <!-- =================== LIGHTING =================== -->
       <!-- Natural lighting setup with 2 directional lights -->
       <!-- Moderate ambient for soft natural look -->
       <directionalLight direction="0 0 0" ambientIntensity="0.25" color="1 1 1"></directionalLight>
@@ -31,14 +32,14 @@
       <!-- Fill light from left side (softer, cooler) -->
       <directionalLight direction="-0.6 -0.3 0.2" intensity="0.35" color="0.9 0.9 0.95"></directionalLight>
       
-      <!-- ==================== STATIC ENVIRONMENT ==================== -->
+      <!-- ================ STATIC ENVIRONMENT ================ -->
       <!-- Platforms and ground will be loaded from JSON level file -->
       <!-- See: public/levels/level1.json -->
       
-      <!-- ==================== COLLECTIBLES ==================== -->
+      <!-- ================== COLLECTIBLES ================== -->
       <!-- Coins will be loaded from JSON level file as models -->
 
-      <!-- ==================== ENEMIES ==================== -->
+      <!-- ===================== ENEMIES ===================== -->
       <!-- Enemies will be loaded from JSON level file as models -->
       
       <!-- Player - controlled entity, NOT in colliders list -->
@@ -51,13 +52,10 @@
         </shape>
       </transform>
 
-
       <!-- ==================== SKYBOX ==================== -->
-      <!-- Skybox with optional texture or fallback color -->
       <transform id="skybox" translation="0 0 0" scale="-1 -1 -1">
         <shape>
           <appearance id="skybox-appearance">
-            <!-- Texture will be set by code if available, otherwise uses material -->
             <material id="skybox-material" diffuseColor="0 0 0" emissiveColor="0.56 0.83 1.0"></material>
           </appearance>
           <sphere radius="50" lit="false"></sphere>

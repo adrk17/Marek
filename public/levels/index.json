@@ -1,0 +1,10 @@
+[
+  {
+    "id": "test1",
+    "name": "Test level 1",
+    "file": "/levels/level1.json",
+    "description": "Learn the basics and meet every enemy type in one compact run.",
+    "difficulty": "Normal",
+    "author": "Dev Team"
+  }
+]

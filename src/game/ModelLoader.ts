@@ -7,6 +7,9 @@ export interface LevelData {
   name: string;
   models: ModelDefinition[];
   enemies?: EnemyDefinition[];
+  description?: string;
+  difficulty?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ModelDefinition {
@@ -24,7 +27,7 @@ export interface ModelDefinition {
   // Optional movement definition for moving platforms
   move?: { axis?: 'x' | 'y'; amplitude?: number; speed?: number; phase?: number };
   // Endless elevator platforms grouping/behavior
-  endless?: { group?: string; speed?: number; spacing?: number; bottomY?: number; spawnMargin?: number; count?: number };
+  endless?: { group?: string; speed?: number; spacing?: number; spawnMargin?: number; count?: number };
 }
 
 export interface EnemyDefinition {
@@ -70,7 +73,6 @@ export class ModelLoader {
         const groupName = model.endless?.group ?? model.id;
         const speed = model.endless?.speed ?? 0;
         const spacing = model.endless?.spacing ?? 2.5;
-        const bottomY = model.endless?.bottomY ?? -6;
         const count = Math.max(1, Math.floor(model.endless?.count ?? 3));
         const size = model.size ?? { x: 3, y: 0.5, z: 2 };
         const x = model.position.x;
@@ -87,7 +89,7 @@ export class ModelLoader {
             type: 'endless_platform',
             colliderType: ColliderType.SOLID,
             node: node ?? undefined,
-            endless: { group: groupName, speed, spacing, bottomY }
+            endless: { group: groupName, speed, spacing }
           });
         }
       } else {
@@ -112,8 +114,7 @@ export class ModelLoader {
             const group = model.endless?.group ?? 'default';
             const speed = model.endless?.speed ?? 0;
             const spacing = model.endless?.spacing ?? 0;
-            const bottomY = model.endless?.bottomY ?? -6;
-            collider.endless = { group, speed, spacing, bottomY };
+            collider.endless = { group, speed, spacing };
           }
           colliders.push(collider);
         }

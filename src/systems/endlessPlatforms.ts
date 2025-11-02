@@ -7,7 +7,8 @@ export interface EndlessPlatformState {
   group: string;
   speed: number;
   spacing: number;
-  bottomY: number;
+  initialTop: number;
+  initialBottom: number;
   // Track last frame movement to carry player
   lastY?: number;
   lastDY?: number;
@@ -20,15 +21,26 @@ export function buildEndlessPlatforms(colliders: Collider[], cfg: EndlessPlatfor
     if (c.type !== 'endless_platform') continue;
     const speed = c.endless?.speed ?? cfg.defaultSpeed;
     const spacing = c.endless?.spacing ?? cfg.defaultSpacing;
-    const bottomY = c.endless?.bottomY ?? cfg.defaultBottomY;
     const group = c.endless?.group ?? 'default';
-    list.push({ collider: c, group, speed, spacing, bottomY, lastY: c.pos.y, lastDY: 0 });
+    const halfHeight = c.size.y / 2;
+    list.push({
+      collider: c,
+      group,
+      speed,
+      spacing,
+      initialTop: c.pos.y + halfHeight,
+      initialBottom: c.pos.y - halfHeight,
+      lastY: c.pos.y,
+      lastDY: 0
+    });
   }
   return list;
 }
 
 export function updateEndlessPlatforms(platforms: EndlessPlatformState[], deltaTime: number): void {
-  // Move all down
+  if (!platforms.length) return;
+
+  // Move according to speed (positive speed keeps legacy behaviour: downward)
   for (const p of platforms) {
     const oldY = p.collider.pos.y;
     p.collider.pos.y -= p.speed * deltaTime;
@@ -45,22 +57,46 @@ export function updateEndlessPlatforms(platforms: EndlessPlatformState[], deltaT
     groups.set(p.group, arr);
   }
   for (const [, arr] of groups) {
-    // find current top among group (top edge y)
-    let maxTop = -Infinity;
-    for (const p of arr) {
-      const top = p.collider.pos.y + p.collider.size.y / 2;
-      if (top > maxTop) maxTop = top;
-    }
-    for (const p of arr) {
-      const top = p.collider.pos.y + p.collider.size.y / 2;
-      if (top < p.bottomY) {
-        // recycle above current top; keep exact spacing (ignore spawnMargin for intra-group gap)
-        const newCenterY = maxTop + p.spacing + p.collider.size.y / 2;
-        p.collider.pos.y = newCenterY;
-        p.lastDY = p.collider.pos.y - (p.lastY ?? newCenterY);
-        p.lastY = p.collider.pos.y;
-        if (p.collider.node) setTranslation(p.collider.node, p.collider.pos.x, p.collider.pos.y, p.collider.pos.z);
-        maxTop = newCenterY + p.collider.size.y / 2;
+    if (!arr.length) continue;
+    const movingDown = (arr[0]?.speed ?? 0) >= 0;
+    const initialMinBottom = arr.reduce((min, p) => Math.min(min, p.initialBottom), Infinity);
+    const initialMaxTop = arr.reduce((max, p) => Math.max(max, p.initialTop), -Infinity);
+
+    if (movingDown) {
+      let maxTopCurrent = arr.reduce(
+        (max, p) => Math.max(max, p.collider.pos.y + p.collider.size.y / 2),
+        -Infinity
+      );
+      for (const p of arr) {
+        const currentTop = p.collider.pos.y + p.collider.size.y / 2;
+        if (currentTop < initialMinBottom) {
+          const halfHeight = p.collider.size.y / 2;
+          const newCenterY = maxTopCurrent + p.spacing + halfHeight;
+          const prevY = p.collider.pos.y;
+          p.collider.pos.y = newCenterY;
+          p.lastDY = p.collider.pos.y - prevY;
+          p.lastY = p.collider.pos.y;
+          if (p.collider.node) setTranslation(p.collider.node, p.collider.pos.x, p.collider.pos.y, p.collider.pos.z);
+          maxTopCurrent = newCenterY + halfHeight;
+        }
+      }
+    } else {
+      let minBottomCurrent = arr.reduce(
+        (min, p) => Math.min(min, p.collider.pos.y - p.collider.size.y / 2),
+        Infinity
+      );
+      for (const p of arr) {
+        const currentBottom = p.collider.pos.y - p.collider.size.y / 2;
+        if (currentBottom > initialMaxTop) {
+          const halfHeight = p.collider.size.y / 2;
+          const newCenterY = minBottomCurrent - p.spacing - halfHeight;
+          const prevY = p.collider.pos.y;
+          p.collider.pos.y = newCenterY;
+          p.lastDY = p.collider.pos.y - prevY;
+          p.lastY = p.collider.pos.y;
+          if (p.collider.node) setTranslation(p.collider.node, p.collider.pos.x, p.collider.pos.y, p.collider.pos.z);
+          minBottomCurrent = newCenterY - halfHeight;
+        }
       }
     }
   }

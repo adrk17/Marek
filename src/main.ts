@@ -16,97 +16,121 @@ import { getIntent } from './systems/input';
 import { detectGoalHit } from './systems/goals';
 import { buildMovingPlatforms, updateMovingPlatforms, computeRideDeltaForPlayer, type MovingPlatformState } from './systems/platforms';
 import { buildEndlessPlatforms, updateEndlessPlatforms, computeVerticalRideDeltaForPlayer, type EndlessPlatformState } from './systems/endlessPlatforms';
+import { MenuUI } from './game/ui/MenuUI';
+import { loadLevelCatalog, type LevelManifest } from './game/LevelCatalog';
+import { getProfile, saveProfile, getLeaderboard, recordResult, type PlayerProfile, type RunResult } from './game/storage/GameStorage';
+
+interface GameSessionOptions {
+  manifest: LevelManifest;
+  profile: PlayerProfile;
+  onFinished?: (result: RunResult) => void;
+}
 
 class Game {
   private input: Input;
-  private player!: Player; // Will be initialized after level load
+  private player!: Player;
   private camera: Camera;
   private gameState: GameState;
   private uiManager: UIManager;
   private modelLoader: ModelLoader;
   private skyboxManager: SkyboxManager;
-  private colliders: Collider[];
-  private coins: Coin[];
-  private enemies: Enemy[];
+  private colliders: Collider[] = [];
+  private coins: Coin[] = [];
+  private enemies: Enemy[] = [];
   private movingPlatforms: MovingPlatformState[] = [];
   private endlessPlatforms: EndlessPlatformState[] = [];
-  private lastTime: number = 0;
+  private lastTime = 0;
   private config: GameConfig;
-  private levelLoaded: boolean = false;
+  private levelLoaded = false;
+  private coinsCollected = 0;
+  private currentHeightBonus = 0;
+  private completionTime = 0;
+  private manifest: LevelManifest | null = null;
+  private profile: PlayerProfile | null = null;
+  private onFinished: ((result: RunResult) => void) | null = null;
 
   constructor(config?: Partial<GameConfig>) {
     this.config = config ? createConfig(config) : DEFAULT_CONFIG;
-    
+
     this.input = new Input(this.config.controls);
     this.camera = new Camera('cam', this.config.camera);
     this.gameState = new GameState();
     this.uiManager = new UIManager();
     this.modelLoader = new ModelLoader();
     this.skyboxManager = new SkyboxManager(this.config.skybox);
-    
-    // Initialize empty arrays - will be populated when level loads
-    this.colliders = [];
-    this.coins = [];
-    this.enemies = [];
-    
-    // Load level asynchronously, then create player and start game loop
-    this.loadLevel('/levels/level1.json').then(() => {
-      // Now that level is loaded and player element exists in DOM, create Player instance
-      this.player = new Player('player', this.config.player, this.config.physics);
-      
-      // Setup death callback
-      this.player.onDeath(() => this.handlePlayerDeath());
-      
-      this.levelLoaded = true;
-      console.log('Level loaded, player created, starting game loop');
+
+    this.uiManager.configurePauseHandlers({
+      onResume: () => this.resumeGame(),
+      onMenu: () => this.returnToMenu()
     });
+  }
+
+  async prepareSession(options: GameSessionOptions): Promise<void> {
+    this.manifest = options.manifest;
+    this.profile = options.profile;
+    this.onFinished = options.onFinished ?? null;
+    this.coinsCollected = 0;
+    this.currentHeightBonus = 0;
+    this.completionTime = 0;
+    this.levelLoaded = false;
+    this.gameState.reset();
+    this.uiManager.updateScore(0);
+    this.uiManager.updateTime(0);
+
+    await this.loadLevel(this.manifest.file);
+
+    this.player = new Player('player', this.config.player, this.config.physics);
+    this.player.onDeath(() => this.handlePlayerDeath());
+
+    this.levelLoaded = true;
+    this.uiManager.updateScore(0);
+    console.log(`Level "${this.manifest.name}" ready. Starting game loop.`);
+  }
+
+  start(): void {
+    this.lastTime = performance.now();
+    requestAnimationFrame((time: number) => this.loop(time));
   }
 
   private async loadLevel(levelUrl: string): Promise<void> {
     try {
       console.log(`Loading level from: ${levelUrl}`);
       const levelData = await this.modelLoader.loadLevelFromFile(levelUrl);
-      console.log('Level data loaded:', levelData);
-      
-      // Load models and get colliders
+
       this.colliders = this.modelLoader.loadFromJSON(levelData);
-      console.log('Colliders created:', this.colliders);
-      
-      // Create enemy elements in DOM
+
       if (levelData.enemies && levelData.enemies.length > 0) {
         this.modelLoader.createEnemies(levelData.enemies);
       }
-      
-      // Extract coins from loaded models (type: 'coin')
+
       this.coins = levelData.models
         .filter(model => model.type === 'coin')
         .map((model) => {
           const coinElement = document.getElementById(model.id);
-          
-          if (!coinElement) {
-            console.warn(`Coin element not found: ${model.id}`);
+
+          if (!coinElement || !model.size) {
+            console.warn(`Coin element not found or missing size: ${model.id}`);
             return null;
           }
-          
+
           return new Coin(
             coinElement as Element,
-            { 
-              size: model.size!.x,
-              value: model.value || this.config.coin.value 
+            {
+              size: model.size.x,
+              value: model.value || this.config.coin.value
             }
           );
         })
         .filter((coin): coin is Coin => coin !== null);
-      
-      // Create Enemy instances
+
       this.enemies = (levelData.enemies || []).map((enemyDef) => {
         const enemyElement = document.getElementById(enemyDef.id);
-        
+
         if (!enemyElement) {
           console.warn(`Enemy element not found: ${enemyDef.id}`);
           return null;
         }
-        
+
         return new Enemy(
           enemyDef.id,
           { x: enemyDef.position.x, y: enemyDef.position.y },
@@ -121,17 +145,17 @@ class Game {
           this.config.physics
         );
       }).filter((enemy): enemy is Enemy => enemy !== null);
-      
+
+      this.movingPlatforms = buildMovingPlatforms(this.colliders, this.config.movingPlatforms);
+      this.endlessPlatforms = buildEndlessPlatforms(this.colliders, this.config.endlessPlatforms);
+
       console.log(`Loaded level: ${levelData.name}`);
       console.log(`- Models: ${this.colliders.length}`);
       console.log(`- Coins: ${this.coins.length}`);
       console.log(`- Enemies: ${this.enemies.length}`);
-
-      // Build moving platforms list from colliders
-      this.movingPlatforms = buildMovingPlatforms(this.colliders, this.config.movingPlatforms);
-      this.endlessPlatforms = buildEndlessPlatforms(this.colliders, this.config.endlessPlatforms);
     } catch (error) {
       console.error('Failed to load level:', error);
+      throw error;
     }
   }
 
@@ -139,35 +163,30 @@ class Game {
     const deltaTime: number = Math.min((currentTime - this.lastTime) / 1000, 0.05);
     this.lastTime = currentTime;
 
-
     if (this.gameState.isDying) {
       if (this.player) {
         this.player.updateDeath(deltaTime);
       }
       this.gameState.updateDeathTimer(deltaTime);
 
-      // Keep camera loosely following X during death
       if (this.player) {
         const pos = this.player.getPosition();
         this.camera.followTarget(pos.x);
       }
 
-      // Check if death animation is finished
       if (this.gameState.deathTimer >= this.config.player.deathAnimationDuration) {
         this.respawnPlayer();
       }
-      
+
       requestAnimationFrame((time: number) => this.loop(time));
       return;
     }
 
-    // Check for pause toggle
     if (this.input.pausePressed()) {
-      this.gameState.togglePause();
       if (this.gameState.isPaused) {
-        this.uiManager.showPause();
+        this.resumeGame();
       } else {
-        this.uiManager.hidePause();
+        this.pauseGame();
       }
     }
 
@@ -182,23 +201,19 @@ class Game {
     if (!this.levelLoaded) return;
 
     const { axisX, jump } = getIntent(this.input, this.player.isGrounded());
-    
-    // During winning animation, do not process normal input update
+
     if (this.gameState.isWinning) {
       this.player.updateGoalSlide(deltaTime);
     } else {
       this.player.update(deltaTime, axisX, jump, this.colliders);
     }
-    
+
     const playerPosition = this.player.getPosition();
     this.camera.followTarget(playerPosition.x, undefined, this.player.getVelocity().x);
-    // Keep skybox centered on player X to avoid parallax drift
     this.skyboxManager.setCenter(playerPosition.x, 0, 0);
 
-    // Moving platforms
     if (this.movingPlatforms.length) {
       updateMovingPlatforms(this.movingPlatforms, deltaTime);
-      // Apply platform carry if grounded and not in win flow
       if (!this.gameState.isWinning && this.player.isGrounded()) {
         const ride = computeRideDeltaForPlayer(this.player.getAABB(), this.movingPlatforms);
         if (ride.dx !== 0 || ride.dy !== 0) {
@@ -206,6 +221,7 @@ class Game {
         }
       }
     }
+
     if (this.endlessPlatforms.length) {
       updateEndlessPlatforms(this.endlessPlatforms, deltaTime);
       if (!this.gameState.isWinning && this.player.isGrounded()) {
@@ -216,7 +232,6 @@ class Game {
       }
     }
 
-    // Update and cull enemies via system helpers, using activation radius around player
     const activeUpdateRadius = this.config.activation.enemyUpdateRadius;
     const activeCollisionRadius = this.config.activation.enemyCollisionRadius ?? activeUpdateRadius;
 
@@ -227,34 +242,23 @@ class Game {
     const activeForCollisions = getActiveEnemies(this.enemies, playerPosition.x, playerPosition.y, activeCollisionRadius);
     handleEnemyCollisions(activeForCollisions, this.player);
 
-    // Coins
     const gained = collectCoins(this.coins, this.player);
     if (gained > 0) {
-      this.gameState.addScore(gained);
-      this.uiManager.updateScore(this.gameState.score);
+      this.coinsCollected += gained;
+      this.uiManager.updateScore(this.coinsCollected);
     }
-    
+
     this.gameState.updateTime(deltaTime);
     this.uiManager.updateTime(this.gameState.time);
 
-    // Goal detection and finishing flow
     if (!this.gameState.isWinning) {
       const hit = detectGoalHit(this.colliders, this.player);
       if (hit) {
-        // Compute bonuses
         const cfg = this.config.goal;
         const ratio = Math.max(0, Math.min(1, hit.ratio));
-        const poleBonus = Math.round(cfg.poleBonusMin + (cfg.poleBonusMax - cfg.poleBonusMin) * ratio);
-        const maxSecondsForBonus = 300; // configurable later if needed
-        let timeBonus = Math.max(0, Math.round(cfg.timeBonusPerSecond * Math.max(0, maxSecondsForBonus - this.gameState.time)));
-        if (cfg.timeBonusCap !== undefined) timeBonus = Math.min(timeBonus, cfg.timeBonusCap);
-        const totalBonus = poleBonus + timeBonus;
-        if (totalBonus > 0) {
-          this.gameState.addScore(totalBonus);
-          this.uiManager.updateScore(this.gameState.score);
-        }
+        this.currentHeightBonus = Math.round(cfg.poleBonusMin + (cfg.poleBonusMax - cfg.poleBonusMin) * ratio);
+        this.completionTime = this.gameState.time;
 
-        // Start winning animation (stick to pole and slide down)
         this.gameState.startWin();
         this.player.startGoalSlide(hit.poleX, hit.bottomY, cfg.poleSlideSpeed);
       }
@@ -272,27 +276,116 @@ class Game {
     if (this.player) {
       this.player.startDeathAnimation();
     }
+    this.uiManager.showDeath();
   }
 
   private respawnPlayer(): void {
     console.log('Respawning player...');
     this.gameState.finishDeathAnimation();
     this.uiManager.hideDeath();
-    
     window.location.reload();
   }
 
   private finishLevel(): void {
     console.log('Level finished!');
     this.gameState.finishWin();
+
+    if (this.manifest && this.profile) {
+      const result: RunResult = {
+        levelId: this.manifest.id,
+        nickname: this.profile.nickname,
+        time: this.completionTime || this.gameState.time,
+        coins: this.coinsCollected,
+        heightBonus: this.currentHeightBonus
+      };
+      recordResult(result);
+      this.onFinished?.(result);
+    }
+
     window.location.reload();
   }
 
-  start(): void {
-    this.lastTime = performance.now();
-    requestAnimationFrame((time: number) => this.loop(time));
+  private pauseGame(): void {
+    if (!this.gameState.isPaused) {
+      this.gameState.pause();
+      this.uiManager.showPause();
+    }
+  }
+
+  private resumeGame(): void {
+    if (this.gameState.isPaused) {
+      this.gameState.resume();
+      this.uiManager.hidePause();
+      this.lastTime = performance.now();
+    }
+  }
+
+  private returnToMenu(): void {
+    this.pauseGame();
+    window.location.reload();
   }
 }
 
-const game: Game = new Game();
-game.start();
+class GameApplication {
+  private menu: MenuUI;
+  private profile: PlayerProfile;
+  private levels: LevelManifest[] = [];
+  private activeGame: Game | null = null;
+
+  constructor() {
+    this.profile = getProfile();
+    this.menu = new MenuUI({
+      onLevelSelected: (level) => this.handleLevelSelected(level),
+      onPlay: (level) => { void this.startGame(level); },
+      onProfileSave: (nickname) => this.updateProfile(nickname)
+    });
+  }
+
+  async init(): Promise<void> {
+    this.menu.setProfile(this.profile);
+    this.menu.show();
+
+    const catalog = await loadLevelCatalog();
+    this.levels = catalog;
+    this.menu.setLevels(this.levels);
+  }
+
+  private handleLevelSelected(level: LevelManifest): void {
+    const leaderboard = getLeaderboard(level.id);
+    this.menu.setLeaderboard(leaderboard);
+  }
+
+  private updateProfile(nickname: string): void {
+    const trimmed = nickname.trim();
+    this.profile = { nickname: trimmed || 'Guest' };
+    saveProfile(this.profile);
+    this.menu.setProfile(this.profile);
+  }
+
+  private async startGame(level: LevelManifest): Promise<void> {
+    if (this.activeGame) {
+      return;
+    }
+
+    try {
+      this.menu.hide();
+      this.activeGame = new Game();
+      await this.activeGame.prepareSession({
+        manifest: level,
+        profile: this.profile,
+        onFinished: () => {
+          const updated = getLeaderboard(level.id);
+          this.menu.setLeaderboard(updated);
+        }
+      });
+      this.activeGame.start();
+    } catch (error) {
+      console.error('Failed to start game:', error);
+      this.activeGame = null;
+      this.menu.show();
+    }
+  }
+}
+
+const app = new GameApplication();
+void app.init();

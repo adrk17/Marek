@@ -45,7 +45,7 @@ export class GameState {
   }
 
   updateTime(deltaTime: number): void {
-    if (!this._isPaused && !this._isGameOver && !this._isDying) {
+    if (!this._isPaused && !this._isGameOver && !this._isDying && !this._isWinning) {
       this._time += deltaTime;
     }
   }

@@ -91,9 +91,8 @@ export interface MovingPlatformsConfig {
 
 export interface EndlessPlatformsConfig {
   enabled: boolean;
-  defaultSpeed: number;   // units/sec downward
+  defaultSpeed: number;   // units/sec, positive values move downward by default
   defaultSpacing: number; // vertical gap between platforms in group
-  defaultBottomY: number; // recycle when platform top < bottomY
 }
 
 export interface GameConfig {
@@ -208,8 +207,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   endlessPlatforms: {
     enabled: true,
     defaultSpeed: 1.2,
-    defaultSpacing: 2.5,
-    defaultBottomY: -6
+    defaultSpacing: 2.5
   }
 };
 
