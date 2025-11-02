@@ -170,9 +170,9 @@ export const DEFAULT_CONFIG: GameConfig = {
     maxFallSpeed: -40
   },
   skybox: {
-    textureUrl: undefined,  // Optional texture path
+    textureUrl: '/textures/1/background 2/orig_big.png',  // Optional texture path
     fallbackColor: "0.56 0.83 1.0", 
-    radius: 50
+    radius: 200
   },
   coin: {
     size: 0.6,

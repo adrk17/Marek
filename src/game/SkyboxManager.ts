@@ -4,13 +4,15 @@ export class SkyboxManager {
   private skyboxAppearance: Element | null;
   private skyboxMaterial: Element | null;
   private skyboxTransform: Element | null;
+  private skyboxSphere: Element | null;
   private config: SkyboxConfig;
 
   constructor(config: SkyboxConfig) {
     this.config = config;
     this.skyboxAppearance = document.getElementById('skybox-appearance');
     this.skyboxMaterial = document.getElementById('skybox-material');
-    this.skyboxTransform = document.getElementById('skybox');
+    this.skyboxTransform = document.getElementById('skybox-transform');
+    this.skyboxSphere = document.getElementById('skybox-sphere');
     this.initialize();
   }
 
@@ -20,7 +22,7 @@ export class SkyboxManager {
   }
 
   private initialize(): void {
-    if (!this.skyboxAppearance || !this.skyboxMaterial) {
+    if (!this.skyboxAppearance || !this.skyboxMaterial || !this.skyboxSphere) {
       console.warn('Skybox elements not found in DOM');
       return;
     }
@@ -29,6 +31,10 @@ export class SkyboxManager {
       this.loadTexture(this.config.textureUrl);
     } else {
       this.useFallbackColor();
+    }
+
+    if( this.config.radius ) {
+      this.skyboxSphere.setAttribute('radius', this.config.radius.toString());
     }
   }
 

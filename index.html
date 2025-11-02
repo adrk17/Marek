@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="https://www.x3dom.org/download/x3dom.css">
   <script src="https://www.x3dom.org/download/x3dom.js"></script>
 </head>
+
 <body>
   <!-- UI will be created by UIManager -->
 
@@ -14,34 +16,30 @@
     <scene>
       <!-- ==================== CAMERA ==================== -->
       <!-- all parameters controlled via game config -->
-      <viewpoint 
-        id="cam" 
-        position="0 4 14" 
-        orientation="-1 0 0 0.3"
-        fieldOfView="0.785">
+      <viewpoint id="cam" position="0 4 14" orientation="-1 0 0 0.3" fieldOfView="0.785">
       </viewpoint>
-      
+
       <!-- =================== LIGHTING =================== -->
       <!-- Natural lighting setup with 2 directional lights -->
       <!-- Moderate ambient for soft natural look -->
       <directionalLight direction="0 0 0" ambientIntensity="0.25" color="1 1 1"></directionalLight>
-      
+
       <!-- Main sun light from top-front-right -->
       <directionalLight direction="0.4 -0.8 -0.4" intensity="0.9" color="1 0.97 0.92"></directionalLight>
-      
+
       <!-- Fill light from left side (softer, cooler) -->
       <directionalLight direction="-0.6 -0.3 0.2" intensity="0.35" color="0.9 0.9 0.95"></directionalLight>
-      
+
       <!-- ================ STATIC ENVIRONMENT ================ -->
       <!-- Platforms and ground will be loaded from JSON level file -->
       <!-- See: public/levels/level1.json -->
-      
+
       <!-- ================== COLLECTIBLES ================== -->
       <!-- Coins will be loaded from JSON level file as models -->
 
       <!-- ===================== ENEMIES ===================== -->
       <!-- Enemies will be loaded from JSON level file as models -->
-      
+
       <!-- Player - controlled entity, NOT in colliders list -->
       <transform id="player" translation="0 1 0">
         <shape>
@@ -53,17 +51,20 @@
       </transform>
 
       <!-- ==================== SKYBOX ==================== -->
-      <transform id="skybox" translation="0 0 0" scale="-1 -1 -1">
-        <shape>
-          <appearance id="skybox-appearance">
-            <material id="skybox-material" diffuseColor="0 0 0" emissiveColor="0.56 0.83 1.0"></material>
-          </appearance>
-          <sphere radius="50" lit="false"></sphere>
-        </shape>
+      <transform id="skybox-flip" rotation="1 0 0 3.141592653589793">
+        <transform id="skybox-transform" translation="0 0 0" scale="-1 -1 -1" rotation="0 1 0 0">
+          <shape>
+            <appearance id="skybox-appearance">
+              <material id="skybox-material" diffusecolor="0 0 0" emissivecolor="0.56 0.83 1.0"></material>
+            </appearance>
+            <sphere id="skybox-sphere" radius="50" lit="false"></sphere>
+          </shape>
+        </transform>
       </transform>
     </scene>
   </x3d>
-  
+
   <script type="module" src="/src/main.ts"></script>
 </body>
+
 </html>
