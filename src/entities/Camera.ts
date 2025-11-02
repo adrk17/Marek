@@ -27,7 +27,7 @@ export class Camera {
     this.node.setAttribute('position', `${this.currentX.toFixed(3)} ${this.currentY} ${this.config.offsetZ}`);
   }
 
-  followTarget(targetX: number, targetY?: number, _targetVelX?: number): void {
+  followTarget(targetX: number, targetY?: number, targetZ?: number, _targetVelX?: number): void {
     const targetYFinal: number = targetY !== undefined ? targetY + this.config.offsetY : this.config.offsetY;
 
     const offsetX = this.config.offsetX ?? 0;
@@ -41,7 +41,9 @@ export class Camera {
     if (this.maxX !== undefined && this.currentX > this.maxX) this.currentX = this.maxX;
     this.currentY += (targetYFinal - this.currentY) * this.smoothing;
 
-    const position: string = `${this.currentX.toFixed(3)} ${this.currentY.toFixed(3)} ${this.config.offsetZ}`;
+    // Follow Z position too (for 2.5D movement)
+    const targetZFinal = (targetZ ?? 0) + this.config.offsetZ;
+    const position: string = `${this.currentX.toFixed(3)} ${this.currentY.toFixed(3)} ${targetZFinal.toFixed(3)}`;
     this.node.setAttribute('position', position);
   }
 

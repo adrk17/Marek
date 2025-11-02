@@ -35,8 +35,8 @@ export interface ControlsConfig {
   right: string;
   jump: string;
   pause: string;
-  up?: string;
-  down?: string;
+  forward: string;  // Movement into screen (Z-)
+  backward: string; // Movement out of screen (Z+)
 }
 
 export interface PhysicsConfig {
@@ -151,20 +151,22 @@ export const DEFAULT_CONFIG: GameConfig = {
     }
   },
   camera: {
-    offsetY: 6.5,
-    offsetZ: 16,
-    rotation: 0.2,
+    offsetY: 8,       // Higher up for top-down view
+    offsetZ: 15,       // Further back
+    rotation: 0.4,     // ~52 degrees - more top-down angle (was 0.2 ≈ 11°)
     fieldOfView: 0.785,
     smoothing: 0.4,
     minX: -4,
-    offsetX: 6,
+    offsetX: 0,        // Center camera on player X (was 6)
     
   },
   controls: {
     left: 'ArrowLeft',
     right: 'ArrowRight',
     jump: ' ',
-    pause: 'Escape'
+    pause: 'Escape',
+    forward: 'ArrowUp',    // Into screen (Z-)
+    backward: 'ArrowDown'  // Out of screen (Z+)
   },
   physics: {
     gravity: -60,

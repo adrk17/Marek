@@ -23,8 +23,8 @@ export interface EnemyConfig {
 export class Enemy implements ICollidable {
   private node: Element;
   private size: Vec3;
-  private position: Vec2;
-  private velocity: Vec2 = { x: 0, y: 0 };
+  private position: Vec3;
+  private velocity: Vec3 = { x: 0, y: 0, z: 0 };
   private grounded: boolean = false;
   private config: EnemyConfig;
   private physics: PhysicsConfig;
@@ -41,7 +41,7 @@ export class Enemy implements ICollidable {
 
   constructor(
     nodeId: string,
-    startPosition: { x: number; y: number },
+    startPosition: { x: number; y: number; z?: number },
     config: EnemyConfig,
     physics: PhysicsConfig
   ) {
@@ -52,7 +52,7 @@ export class Enemy implements ICollidable {
     this.config = config;
     this.physics = physics;
     this.size = { x: config.size.width, y: config.size.height, z: config.size.depth };
-    this.position = { x: startPosition.x, y: startPosition.y };
+    this.position = { x: startPosition.x, y: startPosition.y, z: startPosition.z ?? 0 };
     this.startX = startPosition.x;
     this.startY = startPosition.y;
     this.behaviorType = config.behaviorType || 'grzegorz';
@@ -83,7 +83,8 @@ export class Enemy implements ICollidable {
 
       const next = {
         x: this.position.x + this.velocity.x * deltaTime,
-        y: this.position.y + this.velocity.y * deltaTime
+        y: this.position.y + this.velocity.y * deltaTime,
+        z: this.position.z + this.velocity.z * deltaTime
       };
 
       // Still collide with platforms/ground
@@ -92,7 +93,7 @@ export class Enemy implements ICollidable {
       this.grounded = resolved.onGround;
 
       // Set translation with visual offset for stomped enemies
-      setTranslation(this.node, this.position.x, this.position.y - this.visualOffsetY, 0);
+      setTranslation(this.node, this.position.x, this.position.y - this.visualOffsetY, this.position.z);
       return;
     }
 
@@ -107,7 +108,8 @@ export class Enemy implements ICollidable {
 
     const next = {
       x: this.position.x + this.velocity.x * deltaTime,
-      y: this.position.y + this.velocity.y * deltaTime
+      y: this.position.y + this.velocity.y * deltaTime,
+      z: this.position.z + this.velocity.z * deltaTime
     };
 
     const resolved = resolveEntity(next, this.size, this.velocity, colliders);
@@ -143,7 +145,7 @@ export class Enemy implements ICollidable {
       }
     }
 
-    setTranslation(this.node, this.position.x, this.position.y, 0);
+    setTranslation(this.node, this.position.x, this.position.y, this.position.z);
   }
 
   checkStomp(player: ICollidable, playerVelocityY: number): boolean {
@@ -176,7 +178,7 @@ export class Enemy implements ICollidable {
     if (!this.stomped) this.defeat();
   }
 
-  getPosition(): Vec2 {
+  getPosition(): Vec3 {
     return { ...this.position };
   }
 
@@ -211,13 +213,13 @@ export class Enemy implements ICollidable {
   }
 
   getAABB(): AABB {
-    return { x: this.position.x, y: this.position.y, z: 0, w: this.size.x, h: this.size.y, d: this.size.z };
+    return { x: this.position.x, y: this.position.y, z: this.position.z, w: this.size.x, h: this.size.y, d: this.size.z };
   }
 
   getType(): string { return 'enemy'; }
   getColliderType(): ColliderType { return ColliderType.SOLID; }
   isAlive(): boolean { return this.alive && !this.stomped; }
-  getVelocity(): Vec2 { return { ...this.velocity }; }
+  getVelocity(): Vec3 { return { ...this.velocity }; }
   isLethalToEnemies(): boolean { return typeof this.behavior.isLethalToEnemies === 'function' ? !!this.behavior.isLethalToEnemies() : false; }
 
   // Accessors for behaviors

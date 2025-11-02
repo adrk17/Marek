@@ -181,19 +181,19 @@ class Game {
   private update(deltaTime: number): void {
     if (!this.levelLoaded) return;
 
-    const { axisX, jump } = getIntent(this.input, this.player.isGrounded());
+    const { axisX, axisZ, jump } = getIntent(this.input, this.player.isGrounded());
     
     // During winning animation, do not process normal input update
     if (this.gameState.isWinning) {
       this.player.updateGoalSlide(deltaTime);
     } else {
-      this.player.update(deltaTime, axisX, jump, this.colliders);
+      this.player.update(deltaTime, axisX, axisZ, jump, this.colliders);
     }
     
     const playerPosition = this.player.getPosition();
-    this.camera.followTarget(playerPosition.x, undefined, this.player.getVelocity().x);
-    // Keep skybox centered on player X to avoid parallax drift
-    this.skyboxManager.setCenter(playerPosition.x, 0, 0);
+    this.camera.followTarget(playerPosition.x, playerPosition.y, playerPosition.z, this.player.getVelocity().x);
+    // Keep skybox centered on player position to avoid parallax drift
+    this.skyboxManager.setCenter(playerPosition.x, 0, playerPosition.z);
 
     // Moving platforms
     if (this.movingPlatforms.length) {

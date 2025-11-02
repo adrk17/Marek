@@ -16,8 +16,8 @@ enum MovementState {
 export class Player implements ICollidable {
   private node: Element;
   private size: Vec3;
-  private position: Vec2;
-  private velocity: Vec2 = { x: 0, y: 0 };
+  private position: Vec3;
+  private velocity: Vec3 = { x: 0, y: 0, z: 0 };
   private grounded: boolean = false;
   private config: PlayerConfig;
   private physics: PhysicsConfig;
@@ -45,11 +45,11 @@ export class Player implements ICollidable {
     this.config = config;
     this.physics = physics;
     this.size = { x: config.size.width, y: config.size.height, z: config.size.depth };
-    this.position = { x: config.startPosition.x, y: config.startPosition.y };
+    this.position = { x: config.startPosition.x, y: config.startPosition.y, z: 0 };
     this.deathAnim = new DeathAnimation(config.deathAnimation!);
   }
 
-  update(deltaTime: number, axisX: number, jump: boolean, colliders: Collider[]): void {
+  update(deltaTime: number, axisX: number, axisZ: number, jump: boolean, colliders: Collider[]): void {
     if (this.deathAnim.isActive() || this.goalSlideActive) {
       return;
     }
@@ -64,6 +64,25 @@ export class Player implements ICollidable {
     // Update movement state based on input
     this.updateMovementState(axisX, deltaTime);
     
+    // Handle Z-axis movement (depth) - 2.5D movement
+    if (axisZ !== 0) {
+      const targetSpeedZ = axisZ * this.config.maxSpeed;
+      if (Math.abs(this.velocity.z) < this.config.maxSpeed) {
+        this.velocity.z += axisZ * this.config.acceleration * deltaTime;
+        if (Math.abs(this.velocity.z) > this.config.maxSpeed) {
+          this.velocity.z = targetSpeedZ;
+        }
+      }
+    } else {
+      // Decelerate Z when no input
+      const decel = this.config.deceleration * deltaTime;
+      if (this.velocity.z > 0) {
+        this.velocity.z = Math.max(0, this.velocity.z - decel);
+      } else if (this.velocity.z < 0) {
+        this.velocity.z = Math.min(0, this.velocity.z + decel);
+      }
+    }
+    
     if (jump && this.grounded) {
       this.velocity.y = this.config.jumpForce;
     }
@@ -74,9 +93,10 @@ export class Player implements ICollidable {
       this.velocity.y = this.physics.maxFallSpeed;
     }
 
-    const nextPosition: Vec2 = {
+    const nextPosition: Vec3 = {
       x: this.position.x + this.velocity.x * deltaTime,
-      y: this.position.y + this.velocity.y * deltaTime
+      y: this.position.y + this.velocity.y * deltaTime,
+      z: this.position.z + this.velocity.z * deltaTime
     };
 
     const collision = resolveEntity(nextPosition, this.size, this.velocity, colliders);
@@ -84,7 +104,7 @@ export class Player implements ICollidable {
     this.position = collision.next;
     this.grounded = collision.onGround;
 
-    setTranslation(this.node, this.position.x, this.position.y, 0);
+    setTranslation(this.node, this.position.x, this.position.y, this.position.z);
     
     // Check if player fell too low
     if (!this.isDead && this.position.y < this.config.deathHeight) {
@@ -195,7 +215,7 @@ export class Player implements ICollidable {
     return {
       x: this.position.x,
       y: this.position.y,
-      z: 0,
+      z: this.position.z,
       w: this.size.x,
       h: this.size.y,
       d: this.size.z
@@ -210,11 +230,11 @@ export class Player implements ICollidable {
     return ColliderType.SOLID;
   }
 
-  getPosition(): Vec2 {
+  getPosition(): Vec3 {
     return { ...this.position };
   }
 
-  getVelocity(): Vec2 {
+  getVelocity(): Vec3 {
     return { ...this.velocity };
   }
 
@@ -225,9 +245,10 @@ export class Player implements ICollidable {
   reset(): void {
     this.position = {
       x: this.config.startPosition.x,
-      y: this.config.startPosition.y
+      y: this.config.startPosition.y,
+      z: 0
     };
-    this.velocity = { x: 0, y: 0 };
+    this.velocity = { x: 0, y: 0, z: 0 };
     this.grounded = false;
     this.isDead = false;
     this.health = 1;
@@ -299,8 +320,9 @@ export class Player implements ICollidable {
     // Snap X to pole, zero velocity
     this.velocity.x = 0;
     this.velocity.y = 0;
+    this.velocity.z = 0;
     this.position.x = poleX;
-    setTranslation(this.node, this.position.x, this.position.y, 0);
+    setTranslation(this.node, this.position.x, this.position.y, this.position.z);
   }
 
   isGoalSliding(): boolean {
@@ -313,7 +335,7 @@ export class Player implements ICollidable {
     const targetY = this.goalSlideBottomY;
     if (this.position.y > targetY) {
       this.position.y = Math.max(targetY, this.position.y - this.goalSlideSpeed * deltaTime);
-      setTranslation(this.node, this.position.x, this.position.y, 0);
+      setTranslation(this.node, this.position.x, this.position.y, this.position.z);
     }
   }
 
@@ -327,6 +349,6 @@ export class Player implements ICollidable {
     if (dx === 0 && dy === 0) return;
     this.position.x += dx;
     this.position.y += dy;
-    setTranslation(this.node, this.position.x, this.position.y, 0);
+    setTranslation(this.node, this.position.x, this.position.y, this.position.z);
   }
 }

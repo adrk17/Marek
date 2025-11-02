@@ -27,8 +27,8 @@ export class Input {
            key === this.controls.right || 
            key === this.controls.jump ||
            key === this.controls.pause ||
-           key === this.controls.up ||
-           key === this.controls.down;
+           key === this.controls.forward ||
+           key === this.controls.backward;
   }
   
   axisX(): number {
@@ -36,10 +36,11 @@ export class Input {
            (this.keys.has(this.controls.left) ? 1 : 0);
   }
   
-  axisY(): number {
-    const up: number = this.controls.up && this.keys.has(this.controls.up) ? 1 : 0;
-    const down: number = this.controls.down && this.keys.has(this.controls.down) ? 1 : 0;
-    return up - down;
+  axisZ(): number {
+    // Forward (ArrowUp) moves INTO screen (negative Z in typical 3D coords)
+    // Backward (ArrowDown) moves OUT of screen (positive Z)
+    return (this.keys.has(this.controls.backward) ? 1 : 0) - 
+           (this.keys.has(this.controls.forward) ? 1 : 0);
   }
   
   jumpPressed(onGround: boolean): boolean {
