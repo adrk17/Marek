@@ -1,5 +1,13 @@
 {
   "name": "Level 1 - All Enemy Types",
+  "backgroundConfig": {
+    "textureUrl": "/textures/bg/4.png",
+    "fallbackColor": "0.5 0.5 0.5",
+    "repeat": { "s": 2, "t": 1 },
+    "offset": { "y" : 0 },
+    "textureScroll": { "x": 0.005 },
+    "follow": { "x": true }
+  },
   "models": [
     {
       "id": "ground1",

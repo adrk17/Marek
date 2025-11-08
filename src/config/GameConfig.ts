@@ -172,7 +172,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   skybox: {
     textureUrl: '/textures/1/background 2/orig_big.png',  // Optional texture path
     fallbackColor: "0.56 0.83 1.0", 
-    radius: 200
+    radius: 800
   },
   coin: {
     size: 0.6,

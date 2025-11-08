@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marek</title>
   <link rel="stylesheet" href="https://www.x3dom.org/download/x3dom.css">
-  <script src="https://www.x3dom.org/download/x3dom.js"></script>
+  <script src="https://www.x3dom.org/download/1.8.3/x3dom-full.js"></script>
 </head>
 
 <body>
@@ -20,7 +20,7 @@
       </viewpoint>
 
       <!-- =================== LIGHTING =================== -->
-      <!-- Natural lighting setup with 2 directional lights -->
+   
       <!-- Moderate ambient for soft natural look -->
       <directionalLight direction="0 0 0" ambientIntensity="0.25" color="1 1 1"></directionalLight>
 
@@ -60,6 +60,16 @@
             <sphere id="skybox-sphere" radius="50" lit="false"></sphere>
           </shape>
         </transform>
+      </transform>
+
+      <!-- ==================== BACKGROUND ==================== -->
+      <transform id="background-transform" translation="0 0 -80" rotation="0 0 0 0">
+        <shape>
+          <appearance id="background-appearance">
+            <material id="background-material" diffuseColor="1 0.5 0.5" emissiveColor="1 0.5 0.5" specularColor="0 0 0" shininess="0"></material>
+          </appearance>
+          <Rectangle2D id="background-rectangle" size="220 120" lit="false" solid="false"></Rectangle2D>
+        </shape>
       </transform>
     </scene>
   </x3d>

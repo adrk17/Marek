@@ -3,10 +3,13 @@ import { ColliderType } from '../engine/collision';
 import type { Vec2, Vec3 } from '../engine/types';
 import { createStairs as createStairsFactory } from './factories/StairsFactory';
 
+// Definitions for level JSON structure
+
 export interface LevelData {
   name: string;
   models: ModelDefinition[];
   enemies?: EnemyDefinition[];
+  backgroundConfig?: BackgroundConfig;
   description?: string;
   difficulty?: string;
   metadata?: Record<string, unknown>;
@@ -40,9 +43,33 @@ export interface EnemyDefinition {
   jumpForce?: number;
 }
 
+export interface BackgroundConfig {
+  textureUrl?: string;
+  fallbackColor: string; // RGB format: "r g b"
+  repeat?: {
+    s?: number;
+    t?: number;
+  };
+  follow?: {
+    x?: boolean;
+    y?: boolean;
+    scaleX?: number;
+    scaleY?: number;
+  };
+  offset?: {
+    x?: number;
+    y?: number;
+    z?: number;
+  };
+  textureScroll?: {
+    x?: number;
+    y?: number;
+  };
+}
+
 export class ModelLoader {
   /**
-   * Load level from JSON and create colliders.
+   * Load level models from JSON and create colliders.
    * Each model will try to load X3D file if x3dUrl is provided,
    * otherwise falls back to default shape based on size parameters.
    */

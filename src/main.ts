@@ -19,6 +19,7 @@ import { buildEndlessPlatforms, updateEndlessPlatforms, computeVerticalRideDelta
 import { MenuUI } from './game/ui/MenuUI';
 import { loadLevelCatalog, type LevelManifest } from './game/LevelCatalog';
 import { getProfile, saveProfile, getLeaderboard, recordResult, type PlayerProfile, type RunResult } from './game/storage/GameStorage';
+import { BackgroundManager } from './game/BackgroundManager';
 
 interface GameSessionOptions {
   manifest: LevelManifest;
@@ -33,7 +34,8 @@ class Game {
   private gameState: GameState;
   private uiManager: UIManager;
   private modelLoader: ModelLoader;
-  private skyboxManager: SkyboxManager;
+  private skyboxManager: SkyboxManager; // Skybox for even lighting
+  private backgroundManager?: BackgroundManager // Parallax background
   private colliders: Collider[] = [];
   private coins: Coin[] = [];
   private enemies: Enemy[] = [];
@@ -58,6 +60,7 @@ class Game {
     this.uiManager = new UIManager();
     this.modelLoader = new ModelLoader();
     this.skyboxManager = new SkyboxManager(this.config.skybox);
+    this.backgroundManager = undefined;
 
     this.uiManager.configurePauseHandlers({
       onResume: () => this.resumeGame(),
@@ -81,6 +84,8 @@ class Game {
 
     this.player = new Player('player', this.config.player, this.config.physics);
     this.player.onDeath(() => this.handlePlayerDeath());
+    const initialPos = this.player.getPosition();
+    this.backgroundManager?.update(initialPos.x, initialPos.y);
 
     this.levelLoaded = true;
     this.uiManager.updateScore(0);
@@ -98,6 +103,10 @@ class Game {
       const levelData = await this.modelLoader.loadLevelFromFile(levelUrl);
 
       this.colliders = this.modelLoader.loadFromJSON(levelData);
+
+      if (levelData.backgroundConfig) {
+        this.backgroundManager = new BackgroundManager(levelData.backgroundConfig);
+      }
 
       if (levelData.enemies && levelData.enemies.length > 0) {
         this.modelLoader.createEnemies(levelData.enemies);
@@ -172,6 +181,7 @@ class Game {
       if (this.player) {
         const pos = this.player.getPosition();
         this.camera.followTarget(pos.x);
+        this.backgroundManager?.update(pos.x, pos.y);
       }
 
       if (this.gameState.deathTimer >= this.config.player.deathAnimationDuration) {
@@ -211,6 +221,7 @@ class Game {
     const playerPosition = this.player.getPosition();
     this.camera.followTarget(playerPosition.x, undefined, this.player.getVelocity().x);
     this.skyboxManager.setCenter(playerPosition.x, 0, 0);
+    this.backgroundManager?.update(playerPosition.x, playerPosition.y);
 
     if (this.movingPlatforms.length) {
       updateMovingPlatforms(this.movingPlatforms, deltaTime);
