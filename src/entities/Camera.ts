@@ -27,7 +27,7 @@ export class Camera {
     this.node.setAttribute('position', `${this.currentX.toFixed(3)} ${this.currentY} ${this.config.offsetZ}`);
   }
 
-  followTarget(targetX: number, targetY?: number, _targetVelX?: number): void {
+  followTarget(targetX: number, targetY?: number): void {
     const targetYFinal: number = targetY !== undefined ? targetY + this.config.offsetY : this.config.offsetY;
 
     const offsetX = this.config.offsetX ?? 0;

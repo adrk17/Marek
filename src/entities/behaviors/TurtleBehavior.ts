@@ -1,6 +1,7 @@
 import type { Enemy } from '../Enemy';
 import type { EnemyBehavior } from './EnemyBehavior';
 import type { ICollidable } from '../../engine/collision';
+import { checkAABBCollision, isOnTop } from '../../engine/collision';
 
 type TurtleState = 'walking' | 'shell_stationary' | 'shell_moving';
 
@@ -83,41 +84,46 @@ export class TurtleBehavior implements EnemyBehavior {
 
   checkStomp(player: ICollidable, playerVelocityY: number): boolean {
     if (!this.host.isAlive() || this.host.isStomped()) return false;
+
     const pAABB = player.getAABB();
     const eAABB = this.host.getAABB();
-    if (playerVelocityY < 0) {
-      const pBottom = pAABB.y - pAABB.h / 2;
-      const eTop = eAABB.y + eAABB.h / 2;
-      if (Math.abs(pBottom - eTop) < 0.3 && Math.abs(pAABB.x - eAABB.x) < (pAABB.w + eAABB.w) / 2) {
-        if (this.state === 'walking') {
-          this.enterShell();
-        } else if (this.state === 'shell_moving') {
-          this.stopShell();
-        }
-        return true;
+
+    // Player must be falling
+    if (playerVelocityY >= 0) return false;
+
+    if (isOnTop(pAABB, eAABB, 0.3)) {
+      if (this.state === 'walking') {
+        this.enterShell();
+      } else if (this.state === 'shell_moving') {
+        this.stopShell();
       }
+      return true;
     }
+
     return false;
   }
 
   damagesPlayer(player: ICollidable): boolean {
     if (!this.host.isAlive() || this.host.isStomped()) return false;
-    const pAABB = player.getAABB();
-    const eAABB = this.host.getAABB();
-    const collided = Math.abs(pAABB.x - eAABB.x) * 2 < (pAABB.w + eAABB.w) &&
-                     Math.abs(pAABB.y - eAABB.y) * 2 < (pAABB.h + eAABB.h) &&
-                     Math.abs(pAABB.z - eAABB.z) * 2 < (pAABB.d + eAABB.d);
+
+    const collided = checkAABBCollision(player.getAABB(), this.host.getAABB());
+
     if (!collided) return false;
+
     if (this.state === 'shell_moving') {
       // Avoid instant self-hit right after kick
       if (this.afterKickCooldown > 0) return false;
       return true;
     }
+
     if (this.state === 'shell_stationary') {
+      const pAABB = player.getAABB();
+      const eAABB = this.host.getAABB();
       const dir = pAABB.x < eAABB.x ? 1 : -1;
       this.kickShell(dir);
       return false;
     }
+
     return true; // walking hurts
   }
 

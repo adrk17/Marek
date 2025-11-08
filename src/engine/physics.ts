@@ -1,70 +1,106 @@
-import type { AABB, Vec3 } from './types';
-import { ColliderType } from './collision';
+import type { AABB, Vec2, Vec3 } from './types';
+import { createAABB, aabb } from './types';
+import { ColliderType, checkAABBCollision } from './collision';
 
-export function aabbOverlap(a: AABB, b: AABB): boolean {
-  return Math.abs(a.x - b.x) * 2 < (a.w + b.w) &&
-         Math.abs(a.y - b.y) * 2 < (a.h + b.h) &&
-         Math.abs(a.z - b.z) * 2 < (a.d + b.d);
-}
+// ============================================================================
+// Collider definition
+// ============================================================================
 
-
+/**
+ * Physical collider in the game world
+ * Can be static, moving platform, trigger zone, etc.
+ */
 export interface Collider {
   pos: Vec3;
   size: Vec3;
   type?: string;
   node?: Element;
   colliderType?: ColliderType;
-  // Optional motion for moving platforms or similar
-  motion?: { axis: 'x' | 'y'; amplitude: number; speed: number; phase: number };
+  // Optional motion for moving platforms
+  motion?: { 
+    axis: 'x' | 'y'; 
+    amplitude: number; 
+    speed: number; 
+    phase: number;
+  };
   // Endless elevator platforms parameters
-  endless?: { group: string; speed: number; spacing: number };
+  endless?: { 
+    group: string; 
+    speed: number; 
+    spacing: number;
+  };
 }
 
+// ============================================================================
+// Helper functions
+// ============================================================================
+
+/**
+ * Convert Collider to AABB for collision detection
+ */
+export function colliderToAABB(c: Collider): AABB {
+  return createAABB(c.pos, c.size);
+}
+
+// ============================================================================
+// Physics resolution
+// ============================================================================
+
+/**
+ * Resolve entity movement against colliders
+ * Returns adjusted position, ground contact, and head collision status
+ */
 export function resolveEntity(
-  next: { x: number; y: number },
-  playerSize: { x: number; y: number; z: number },
-  v: { x: number; y: number },
+  next: Vec2,
+  entitySize: Vec3,
+  velocity: Vec2,
   colliders: Collider[]
 ) {
-  let onGround = false, hitHead = false;
-  const a: AABB = { x: next.x, y: next.y, z: 0, w: playerSize.x, h: playerSize.y, d: playerSize.z };
+  let onGround = false;
+  let hitHead = false;
+  
+  const entityAABB: AABB = aabb(next.x, next.y, 0, entitySize.x, entitySize.y, entitySize.z);
   
   for (const c of colliders) {
+    // Skip trigger colliders for physics resolution
     if (c.colliderType === ColliderType.TRIGGER) continue;
     
-    const b: AABB = { x: c.pos.x, y: c.pos.y, z: c.pos.z, w: c.size.x, h: c.size.y, d: c.size.z };
-    if (!aabbOverlap(a, b)) continue;
+    const colliderAABB = colliderToAABB(c);
+    
+    if (!checkAABBCollision(entityAABB, colliderAABB)) continue;
 
-    const dxR = (b.x + b.w / 2) - (a.x - a.w / 2);
-    const dxL = (a.x + a.w / 2) - (b.x - b.w / 2);
-    const dyT = (b.y + b.h / 2) - (a.y - a.h / 2);
-    const dyB = (a.y + a.h / 2) - (b.y - b.h / 2);
+    // Calculate penetration depths on all sides
+    const dxRight = (colliderAABB.x + colliderAABB.w / 2) - (entityAABB.x - entityAABB.w / 2);
+    const dxLeft = (entityAABB.x + entityAABB.w / 2) - (colliderAABB.x - colliderAABB.w / 2);
+    const dyTop = (colliderAABB.y + colliderAABB.h / 2) - (entityAABB.y - entityAABB.h / 2);
+    const dyBottom = (entityAABB.y + entityAABB.h / 2) - (colliderAABB.y - colliderAABB.h / 2);
 
-    if (dyT > 0 && dyT < dyB && dyT <= Math.min(dxR, dxL)) {
-      next.y += dyT;
-      if (v.y <= 0) { // only set onGround and v.y = 0 if falling down (prevents sticking to the platform when colliding from the side
-        v.y = 0;
+    // Resolve collision on the axis with smallest penetration
+    if (dyTop > 0 && dyTop < dyBottom && dyTop <= Math.min(dxRight, dxLeft)) {
+      // Collision from top (entity lands on collider)
+      next.y += dyTop;
+      if (velocity.y <= 0) {
+        velocity.y = 0;
         onGround = true;
       }
-      a.y = next.y;
-    } else if (dyB > 0 && dyB <= Math.min(dxR, dxL)) {
-      next.y -= dyB;
-      v.y = Math.min(0, v.y);
+      entityAABB.y = next.y;
+    } else if (dyBottom > 0 && dyBottom <= Math.min(dxRight, dxLeft)) {
+      // Collision from bottom (entity hits head)
+      next.y -= dyBottom;
+      velocity.y = Math.min(0, velocity.y);
       hitHead = true;
-      a.y = next.y;
+      entityAABB.y = next.y;
     } else {
-      // Side collision: resolve based on relative centers to avoid "teleporting"
-      // If the entity's center is left of the collider's center, keep it on the left side, and vice versa.
-      const entityLeftOfCollider = a.x < b.x;
+      // Side collision: resolve based on relative centers
+      const entityLeftOfCollider = entityAABB.x < colliderAABB.x;
       if (entityLeftOfCollider) {
-        next.x -= dxL; // place player's right edge at collider's left edge
-        v.x = Math.min(0, v.x);
-        a.x = next.x;
+        next.x -= dxLeft;
+        velocity.x = Math.min(0, velocity.x);
       } else {
-        next.x += dxR; // place player's left edge at collider's right edge
-        v.x = Math.max(0, v.x);
-        a.x = next.x;
+        next.x += dxRight;
+        velocity.x = Math.max(0, velocity.x);
       }
+      entityAABB.x = next.x;
     }
   }
   

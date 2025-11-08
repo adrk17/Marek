@@ -1,6 +1,7 @@
 import { resolveEntity, type Collider } from '../engine/physics';
 import { setTranslation } from '../engine/x3d';
 import type { AABB, Vec2, Vec3 } from '../engine/types';
+import { createAABB } from '../engine/types';
 import type { PlayerConfig, PhysicsConfig } from '../config/GameConfig';
 import { type ICollidable, ColliderType } from '../engine/collision';
 import { DeathAnimation } from './animation/DeathAnimation';
@@ -31,7 +32,6 @@ export class Player implements ICollidable {
   private deathAnim: DeathAnimation;
   // Win animation (goal slide)
   private goalSlideActive: boolean = false;
-  private goalSlideX: number = 0;
   private goalSlideBottomY: number = 0;
   private goalSlideSpeed: number = 0;
 
@@ -192,14 +192,10 @@ export class Player implements ICollidable {
   }
 
   getAABB(): AABB {
-    return {
-      x: this.position.x,
-      y: this.position.y,
-      z: 0,
-      w: this.size.x,
-      h: this.size.y,
-      d: this.size.z
-    };
+    return createAABB(
+      { x: this.position.x, y: this.position.y, z: 0 },
+      this.size
+    );
   }
 
   getType(): string {
@@ -293,7 +289,6 @@ export class Player implements ICollidable {
   // --- Winning / Goal slide ---
   startGoalSlide(poleX: number, bottomY: number, slideSpeed: number): void {
     this.goalSlideActive = true;
-    this.goalSlideX = poleX;
     this.goalSlideBottomY = bottomY;
     this.goalSlideSpeed = Math.max(0, slideSpeed);
     // Snap X to pole, zero velocity

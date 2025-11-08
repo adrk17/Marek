@@ -219,7 +219,7 @@ class Game {
     }
 
     const playerPosition = this.player.getPosition();
-    this.camera.followTarget(playerPosition.x, undefined, this.player.getVelocity().x);
+    this.camera.followTarget(playerPosition.x);
     this.skyboxManager.setCenter(playerPosition.x, 0, 0);
     this.backgroundManager?.update(playerPosition.x, playerPosition.y);
 

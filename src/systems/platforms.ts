@@ -1,7 +1,9 @@
 import type { Collider } from '../engine/physics';
+import { colliderToAABB } from '../engine/physics';
 import { setTranslation } from '../engine/x3d';
 import type { MovingPlatformsConfig } from '../config/GameConfig';
 import type { AABB } from '../engine/types';
+import { isOnTop } from '../engine/collision';
 
 export interface MovingPlatformState {
   collider: Collider;
@@ -62,21 +64,16 @@ export function updateMovingPlatforms(platforms: MovingPlatformState[], deltaTim
 
 // Returns total delta to apply to player if standing on any moving platform
 export function computeRideDeltaForPlayer(playerAABB: AABB, platforms: MovingPlatformState[]): { dx: number; dy: number } {
-  const EPS = 0.12; // tolerance for bottom-to-top contact
   let dx = 0, dy = 0;
+  
   for (const p of platforms) {
-    const b = { x: p.collider.pos.x, y: p.collider.pos.y, z: p.collider.pos.z, w: p.collider.size.x, h: p.collider.size.y, d: p.collider.size.z };
-    const horizOverlap = Math.abs(playerAABB.x - b.x) * 2 <= (playerAABB.w + b.w);
-    if (!horizOverlap) continue;
-    const playerBottom = playerAABB.y - playerAABB.h / 2;
-    const platTop = b.y + b.h / 2;
-    const above = playerAABB.y >= b.y;
-    if (!above) continue;
-    const verticalGap = Math.abs(playerBottom - platTop);
-    if (verticalGap <= EPS) {
+    const platformAABB = colliderToAABB(p.collider);
+    
+    if (isOnTop(playerAABB, platformAABB)) {
       dx += p.lastDX;
       dy += p.lastDY;
     }
   }
+  
   return { dx, dy };
 }

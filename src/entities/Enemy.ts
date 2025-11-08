@@ -1,8 +1,9 @@
 import { resolveEntity, type Collider } from '../engine/physics';
 import { setTranslation } from '../engine/x3d';
 import type { AABB, Vec2, Vec3 } from '../engine/types';
+import { createAABB } from '../engine/types';
 import type { PhysicsConfig } from '../config/GameConfig';
-import { type ICollidable, ColliderType } from '../engine/collision';
+import { type ICollidable, ColliderType, checkAABBCollision } from '../engine/collision';
 import type { EnemyBehavior } from './behaviors/EnemyBehavior';
 import { PatrolBehavior } from './behaviors/PatrolBehavior';
 import { JumperBehavior } from './behaviors/JumperBehavior';
@@ -29,14 +30,10 @@ export class Enemy implements ICollidable {
   private config: EnemyConfig;
   private physics: PhysicsConfig;
   private startX: number;
-  private startY: number;
   private direction: number = 1;
   private alive: boolean = true;
-  private behaviorType: EnemyBehaviorType;
-  private changeDirectionTimer: number = 0;
   private stomped: boolean = false; // Stomped flat, no more collision
   private visualOffsetY: number = 0; // Additional visual offset for stomped enemies
-  private jumpTimer: number = 0;
   private behavior!: EnemyBehavior;
 
   constructor(
@@ -54,11 +51,10 @@ export class Enemy implements ICollidable {
     this.size = { x: config.size.width, y: config.size.height, z: config.size.depth };
     this.position = { x: startPosition.x, y: startPosition.y };
     this.startX = startPosition.x;
-    this.startY = startPosition.y;
-    this.behaviorType = config.behaviorType || 'grzegorz';
     this.velocity.x = config.speed * this.direction;
 
-    switch (this.behaviorType) {
+    const behaviorType = config.behaviorType || 'grzegorz';
+    switch (behaviorType) {
       case 'pawel_jumper':
         this.behavior = new JumperBehavior(this, config.jumpInterval, config.jumpForce);
         break;
@@ -193,12 +189,7 @@ export class Enemy implements ICollidable {
   }
 
   private checkEnemyCollision(other: Enemy): boolean {
-    const thisAABB = this.getAABB();
-    const otherAABB = other.getAABB();
-    
-    return Math.abs(thisAABB.x - otherAABB.x) * 2 <= (thisAABB.w + otherAABB.w) &&
-           Math.abs(thisAABB.y - otherAABB.y) * 2 <= (thisAABB.h + otherAABB.h) &&
-           Math.abs(thisAABB.z - otherAABB.z) * 2 <= (thisAABB.d + otherAABB.d);
+    return checkAABBCollision(this.getAABB(), other.getAABB());
   }
 
   reverseDirection(): void {
@@ -211,7 +202,10 @@ export class Enemy implements ICollidable {
   }
 
   getAABB(): AABB {
-    return { x: this.position.x, y: this.position.y, z: 0, w: this.size.x, h: this.size.y, d: this.size.z };
+    return createAABB(
+      { x: this.position.x, y: this.position.y, z: 0 },
+      this.size
+    );
   }
 
   getType(): string { return 'enemy'; }

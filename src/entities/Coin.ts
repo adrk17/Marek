@@ -1,7 +1,7 @@
 import type { AABB, Vec3 } from '../engine/types';
+import { createAABB } from '../engine/types';
 import type { CoinConfig } from '../config/GameConfig';
-import { type ICollidable, type ICollectible, ColliderType } from '../engine/collision';
-import { checkAABBCollision } from '../engine/collision';
+import { type ICollidable, type ICollectible, ColliderType, checkAABBCollision } from '../engine/collision';
 
 export class Coin implements ICollectible {
   private size: Vec3;
@@ -10,12 +10,12 @@ export class Coin implements ICollectible {
   private value: number;
 
   constructor(private node: Element, config: CoinConfig) {
-  this.size = { x: config.size, y: config.size, z: config.size };
+    this.size = { x: config.size, y: config.size, z: config.size };
     this.value = config.value;
     
     const positionStr: string = this.node.getAttribute('translation') || '0 0 0';
     const [x, y, z]: number[] = positionStr.split(' ').map(Number);
-  this.position = { x, y, z };
+    this.position = { x, y, z };
   }
 
   tryCollect(collector: ICollidable): number {
@@ -31,14 +31,7 @@ export class Coin implements ICollectible {
   }
 
   getAABB(): AABB {
-    return {
-      x: this.position.x,
-      y: this.position.y,
-      z: this.position.z,
-      w: this.size.x,
-      h: this.size.y,
-      d: this.size.z
-    };
+    return createAABB(this.position, this.size);
   }
 
   getType(): string {

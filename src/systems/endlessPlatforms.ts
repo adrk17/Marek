@@ -1,6 +1,9 @@
 import type { Collider } from '../engine/physics';
+import { colliderToAABB } from '../engine/physics';
 import { setTranslation } from '../engine/x3d';
 import type { EndlessPlatformsConfig } from '../config/GameConfig';
+import type { AABB } from '../engine/types';
+import { isOnTop } from '../engine/collision';
 
 export interface EndlessPlatformState {
   collider: Collider;
@@ -103,20 +106,16 @@ export function updateEndlessPlatforms(platforms: EndlessPlatformState[], deltaT
 }
 
 // Compute vertical carry for player standing on endless platforms
-export function computeVerticalRideDeltaForPlayer(playerAABB: { x: number; y: number; z: number; w: number; h: number; d: number }, platforms: EndlessPlatformState[]): number {
-  const EPS = 0.12;
+export function computeVerticalRideDeltaForPlayer(playerAABB: AABB, platforms: EndlessPlatformState[]): number {
   let dy = 0;
+  
   for (const p of platforms) {
-    const b = { x: p.collider.pos.x, y: p.collider.pos.y, z: p.collider.pos.z, w: p.collider.size.x, h: p.collider.size.y, d: p.collider.size.z };
-    const horizOverlap = Math.abs(playerAABB.x - b.x) * 2 <= (playerAABB.w + b.w);
-    if (!horizOverlap) continue;
-    const playerBottom = playerAABB.y - playerAABB.h / 2;
-    const platTop = b.y + b.h / 2;
-    if (playerAABB.y < b.y) continue; // ensure player center is above platform center
-    const verticalGap = Math.abs(playerBottom - platTop);
-    if (verticalGap <= EPS) {
+    const platformAABB = colliderToAABB(p.collider);
+    
+    if (isOnTop(playerAABB, platformAABB)) {
       dy += p.lastDY ?? 0;
     }
   }
+  
   return dy;
 }
