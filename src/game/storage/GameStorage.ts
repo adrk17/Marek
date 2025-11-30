@@ -73,11 +73,11 @@ const SCORE_A = 1000;   // base scale for the time component
 const SCORE_T_UNIT = 50; // time normalization unit (seconds)
 const SCORE_T0 = 8;      // small buffer to avoid extreme scores at very low T
 const SCORE_K = 1.5;     // time sensitivity (higher = stronger reward for fast runs)
-const SCORE_B = 10;      // weight of the height bonus (applies before coin multiplier)
-const SCORE_ALPHA = 0.20; // +20% per coin as a total multiplier
-const SCORE_M_MAX = 3.0;  // cap for the total coin multiplier
+const SCORE_B = 1;       // weight of the height bonus (minimal contribution)
+const SCORE_ALPHA = 0.15; // +15% per coin as a total multiplier
+const SCORE_M_MAX = 2.5;  // cap for the total coin multiplier
 
-function computeScore(time: number, coins: number, heightBonus: number): number {
+export function computeScore(time: number, coins: number, heightBonus: number): number {
   // Time is the primary factor; lower is better. T0 prevents runaway scores near 0.
   const T = Math.max(0, time);
   // Time term: A * (T_UNIT / (T + T0))^K
@@ -88,6 +88,33 @@ function computeScore(time: number, coins: number, heightBonus: number): number 
   const coinMult = Math.min(1 + SCORE_ALPHA * Math.max(0, coins), SCORE_M_MAX);
 
   return Math.round(base * coinMult);
+}
+
+export interface ScoreBreakdown {
+  timeScore: number;
+  heightBonus: number;
+  coinBonus: number;
+  total: number;
+}
+
+export function computeScoreBreakdown(time: number, coins: number, heightBonus: number): ScoreBreakdown {
+  const T = Math.max(0, time);
+  const timeTerm = SCORE_A * Math.pow(SCORE_T_UNIT / (T + SCORE_T0), SCORE_K);
+  const heightScore = SCORE_B * heightBonus;
+  const base = timeTerm + heightScore;
+  const coinMult = Math.min(1 + SCORE_ALPHA * Math.max(0, coins), SCORE_M_MAX);
+  const total = Math.round(base * coinMult);
+  
+  // Calculate coin bonus contribution
+  const baseWithoutCoins = Math.round(base);
+  const coinBonus = total - baseWithoutCoins;
+  
+  return {
+    timeScore: Math.round(timeTerm),
+    heightBonus: Math.round(heightScore),
+    coinBonus: coinBonus,
+    total: total
+  };
 }
 
 export function recordResult(result: RunResult): LeaderboardEntry[] {

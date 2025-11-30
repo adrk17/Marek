@@ -5,7 +5,7 @@ import { Enemy } from './entities/Enemy';
 import { Coin } from './entities/Coin';
 import { Camera } from './entities/Camera';
 import { GameState } from './game/GameState';
-import { UIManager } from './game/UIManager';
+import { UIManager, type VictoryStats } from './game/UIManager';
 import { ModelLoader } from './game/ModelLoader';
 import { SkyboxManager } from './game/SkyboxManager';
 import { DEFAULT_CONFIG, createConfig, type GameConfig } from './config/GameConfig';
@@ -18,7 +18,7 @@ import { buildMovingPlatforms, updateMovingPlatforms, computeRideDeltaForPlayer,
 import { buildEndlessPlatforms, updateEndlessPlatforms, computeVerticalRideDeltaForPlayer, type EndlessPlatformState } from './systems/endlessPlatforms';
 import { MenuUI } from './game/ui/MenuUI';
 import { loadLevelCatalog, type LevelManifest } from './game/LevelCatalog';
-import { getProfile, saveProfile, getLeaderboard, recordResult, type PlayerProfile, type RunResult } from './game/storage/GameStorage';
+import { getProfile, saveProfile, getLeaderboard, recordResult, computeScore, computeScoreBreakdown, type PlayerProfile, type RunResult } from './game/storage/GameStorage';
 import { BackgroundManager } from './game/BackgroundManager';
 
 interface GameSessionOptions {
@@ -50,6 +50,10 @@ class Game {
   private manifest: LevelManifest | null = null;
   private profile: PlayerProfile | null = null;
   private onFinished: ((result: RunResult) => void) | null = null;
+  private victoryShown = false;
+  private goalContactRatio = 0;
+  private slideAnimationDuration = 0;
+  private slideAnimationComplete = false;
 
   constructor(config?: Partial<GameConfig>) {
     this.config = config ? createConfig(config) : DEFAULT_CONFIG;
@@ -75,6 +79,10 @@ class Game {
     this.coinsCollected = 0;
     this.currentHeightBonus = 0;
     this.completionTime = 0;
+    this.victoryShown = false;
+    this.goalContactRatio = 0;
+    this.slideAnimationDuration = 0;
+    this.slideAnimationComplete = false;
     this.levelLoaded = false;
     this.gameState.reset();
     this.uiManager.updateScore(0);
@@ -269,14 +277,30 @@ class Game {
         const ratio = Math.max(0, Math.min(1, hit.ratio));
         this.currentHeightBonus = Math.round(cfg.poleBonusMin + (cfg.poleBonusMax - cfg.poleBonusMin) * ratio);
         this.completionTime = this.gameState.time;
+        this.goalContactRatio = ratio;
+
+        // Calculate slide animation duration based on contact height
+        // If hit at bottom (ratio=0), slide is instant
+        // If hit at top (ratio=1), slide takes full reloadDelay time
+        const slideDistance = hit.contactY - hit.bottomY;
+        const slideTime = slideDistance / cfg.poleSlideSpeed;
+        this.slideAnimationDuration = slideTime;
+        this.slideAnimationComplete = false;
 
         this.gameState.startWin();
         this.player.startGoalSlide(hit.poleX, hit.bottomY, cfg.poleSlideSpeed);
+        
+        // Show victory screen immediately
+        this.showVictoryScreen();
+        this.victoryShown = true;
       }
     } else {
       this.gameState.updateWinTimer(deltaTime);
-      if (this.gameState.winTimer >= this.config.goal.reloadDelay) {
-        this.finishLevel();
+      
+      // Check if slide animation is complete
+      if (!this.slideAnimationComplete && this.gameState.winTimer >= this.slideAnimationDuration) {
+        this.slideAnimationComplete = true;
+        this.enableContinue();
       }
     }
   }
@@ -297,6 +321,33 @@ class Game {
     window.location.reload();
   }
 
+  private showVictoryScreen(): void {
+    if (!this.manifest || !this.profile) return;
+
+    const breakdown = computeScoreBreakdown(this.completionTime, this.coinsCollected, this.currentHeightBonus);
+
+    const victoryStats: VictoryStats = {
+      coins: breakdown.coinBonus,
+      heightBonus: breakdown.heightBonus,
+      timeBonus: breakdown.timeScore,
+      total: breakdown.total
+    };
+
+    this.uiManager.showVictory(victoryStats);
+  }
+
+  private enableContinue(): void {
+    // Enable space to continue after slide animation completes
+    const continueHandler = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        window.removeEventListener('keydown', continueHandler);
+        this.finishLevel();
+      }
+    };
+    window.addEventListener('keydown', continueHandler);
+    this.uiManager.showContinuePrompt();
+  }
+
   private finishLevel(): void {
     console.log('Level finished!');
     this.gameState.finishWin();
@@ -312,7 +363,7 @@ class Game {
       recordResult(result);
       this.onFinished?.(result);
     }
-
+    
     window.location.reload();
   }
 

@@ -27,8 +27,9 @@ export interface ModelDefinition {
   value?: number; // For coins - point value
   rotation?: Vec3; // Optional Euler rotation in degrees (XYZ)
   scale?: number | Vec3; // Optional scale (uniform or per-axis)
+  modelScale?: number | Vec3; // Optional scale applied only to visual model, not collider
   // Optional movement definition for moving platforms
-  move?: { axis?: 'x' | 'y'; amplitude?: number; speed?: number; phase?: number };
+  move?: { axis?: 'x' | 'y' | 'z'; amplitude?: number; speed?: number; phase?: number };
   // Endless elevator platforms grouping/behavior
   endless?: { group?: string; speed?: number; spacing?: number; spawnMargin?: number; count?: number };
 }
@@ -163,36 +164,38 @@ export class ModelLoader {
     transform.setAttribute('class', model.type);
     transform.setAttribute('id', model.id);
 
-    // Build nested rotation transforms if rotation provided (Euler XYZ in degrees)
-    let targetParent: Element = transform;
+    // Apply rotation if provided (single rotation axis-angle)
     if (model.rotation) {
       const rx = (model.rotation.x || 0) * Math.PI / 180;
       const ry = (model.rotation.y || 0) * Math.PI / 180;
       const rz = (model.rotation.z || 0) * Math.PI / 180;
-
-      const tX: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
-      tX.setAttribute('rotation', `1 0 0 ${rx}`);
-      const tY: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
-      tY.setAttribute('rotation', `0 1 0 ${ry}`);
-      const tZ: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
-      tZ.setAttribute('rotation', `0 0 1 ${rz}`);
-      transform.appendChild(tX);
-      tX.appendChild(tY);
-      tY.appendChild(tZ);
-      targetParent = tZ;
+      
+      // Convert Euler angles to axis-angle (simplified - assumes ZYX order)
+      // For most cases, Y rotation (yaw) is most common
+      if (ry !== 0) {
+        transform.setAttribute('rotation', `0 1 0 ${ry}`);
+      } else if (rx !== 0) {
+        transform.setAttribute('rotation', `1 0 0 ${rx}`);
+      } else if (rz !== 0) {
+        transform.setAttribute('rotation', `0 0 1 ${rz}`);
+      }
     }
 
-    // Apply scale to the target parent if provided
-    if (model.scale !== undefined && model.scale !== null) {
-      if (typeof model.scale === 'number') {
-        const s = model.scale;
-        targetParent.setAttribute('scale', `${s} ${s} ${s}`);
+    // Create nested transform for model-only scaling
+    let targetParent: Element = transform;
+    if (model.modelScale !== undefined && model.modelScale !== null) {
+      const modelTransform: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
+      if (typeof model.modelScale === 'number') {
+        const s = model.modelScale;
+        modelTransform.setAttribute('scale', `${s} ${s} ${s}`);
       } else {
-        const sx = model.scale.x ?? 1;
-        const sy = model.scale.y ?? 1;
-        const sz = model.scale.z ?? 1;
-        targetParent.setAttribute('scale', `${sx} ${sy} ${sz}`);
+        const sx = model.modelScale.x ?? 1;
+        const sy = model.modelScale.y ?? 1;
+        const sz = model.modelScale.z ?? 1;
+        modelTransform.setAttribute('scale', `${sx} ${sy} ${sz}`);
       }
+      transform.appendChild(modelTransform);
+      targetParent = modelTransform;
     }
 
     const url = model.x3dUrl;

@@ -6,5 +6,13 @@
     "description": "Learn the basics and meet every enemy type in one compact run.",
     "difficulty": "Normal",
     "author": "Dev Team"
+  },
+  {
+    "id": "test_z",
+    "name": "Z-Axis Platform Test",
+    "file": "/levels/test_z_platforms.json",
+    "description": "Test platforms moving in Z-axis and modelScale feature. Watch platforms move in and out of depth!",
+    "difficulty": "Experimental",
+    "author": "Dev Team"
   }
 ]

@@ -9,14 +9,17 @@ export interface MovingPlatformState {
   collider: Collider;
   originX: number;
   originY: number;
-  axis: 'x' | 'y';
+  originZ: number;
+  axis: 'x' | 'y' | 'z';
   amplitude: number;
   speed: number; // radians per second for sine wave
   phase: number;
   lastX: number;
   lastY: number;
+  lastZ: number;
   lastDX: number;
   lastDY: number;
+  lastDZ: number;
 }
 
 export function buildMovingPlatforms(colliders: Collider[], cfg: MovingPlatformsConfig): MovingPlatformState[] {
@@ -32,14 +35,17 @@ export function buildMovingPlatforms(colliders: Collider[], cfg: MovingPlatforms
       collider: c,
       originX: c.pos.x,
       originY: c.pos.y,
+      originZ: c.pos.z,
       axis,
       amplitude,
       speed,
       phase,
       lastX: c.pos.x,
       lastY: c.pos.y,
+      lastZ: c.pos.z,
       lastDX: 0,
-      lastDY: 0
+      lastDY: 0,
+      lastDZ: 0
     });
   }
   return list;
@@ -51,11 +57,23 @@ export function updateMovingPlatforms(platforms: MovingPlatformState[], deltaTim
     const offset = Math.sin(p.phase) * p.amplitude;
     const oldX = p.collider.pos.x;
     const oldY = p.collider.pos.y;
-    if (p.axis === 'y') p.collider.pos.y = p.originY + offset; else p.collider.pos.x = p.originX + offset;
+    const oldZ = p.collider.pos.z;
+    
+    if (p.axis === 'y') {
+      p.collider.pos.y = p.originY + offset;
+    } else if (p.axis === 'x') {
+      p.collider.pos.x = p.originX + offset;
+    } else if (p.axis === 'z') {
+      p.collider.pos.z = p.originZ + offset;
+    }
+    
     p.lastDX = p.collider.pos.x - oldX;
     p.lastDY = p.collider.pos.y - oldY;
+    p.lastDZ = p.collider.pos.z - oldZ;
     p.lastX = p.collider.pos.x;
     p.lastY = p.collider.pos.y;
+    p.lastZ = p.collider.pos.z;
+    
     if (p.collider.node) {
       setTranslation(p.collider.node, p.collider.pos.x, p.collider.pos.y, p.collider.pos.z);
     }

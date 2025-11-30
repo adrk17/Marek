@@ -18,7 +18,7 @@ export interface Collider {
   colliderType?: ColliderType;
   // Optional motion for moving platforms
   motion?: { 
-    axis: 'x' | 'y'; 
+    axis: 'x' | 'y' | 'z'; 
     amplitude: number; 
     speed: number; 
     phase: number;
@@ -54,7 +54,8 @@ export function resolveEntity(
   next: Vec2,
   entitySize: Vec3,
   velocity: Vec2,
-  colliders: Collider[]
+  colliders: Collider[],
+  zProximityThreshold: number = 1.5
 ) {
   let onGround = false;
   let hitHead = false;
@@ -66,6 +67,10 @@ export function resolveEntity(
     if (c.colliderType === ColliderType.TRIGGER) continue;
     
     const colliderAABB = colliderToAABB(c);
+    
+    // Check Z-axis proximity - if platform is too far in depth, ignore collision
+    const zDistance = Math.abs(entityAABB.z - colliderAABB.z);
+    if (zDistance > zProximityThreshold) continue;
     
     if (!checkAABBCollision(entityAABB, colliderAABB)) continue;
 
