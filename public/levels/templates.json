@@ -1,0 +1,123 @@
+{
+  "name": "Template Sandbox",
+  "description": "Debug level for testing and aligning 3D models with colliders",
+  "difficulty": "debug",
+  "backgroundConfig": {
+    "fallbackColor": "0.2 0.2 0.3"
+  },
+  "models": [
+    
+    {
+      "id": "label_section1",
+      "type": "decor",
+      "position": { "x": -10, "y": 4, "z": -3 },
+      "size": { "x": 0.1, "y": 0.1, "z": 0.1 },
+      "color": "1 1 1"
+    },
+    
+    {
+      "id": "test_platform_1x1",
+      "type": "platform",
+      "colliderType": "solid",
+      "position": { "x": -10, "y": 1, "z": 0 },
+      "size": { "x": 1, "y": 1.5, "z": 1 },
+      "color": "0.8 0.6 0.4"
+    },
+    
+    {
+      "id": "test_spikes",
+      "type": "spikes",
+      "position": { "x": 3, "y": 12.25, "z": 0 },
+      "size": { "x": 2, "y": 0.5, "z": 2 }
+    },
+    
+    {
+      "id": "coin1",
+      "type": "coin",
+      "colliderType": "trigger",
+      "position": { "x": 7, "y": 1.5, "z": 0 },
+      "size": { "x": 0.8, "y": 0.8, "z": 0.8 },
+      "x3dUrl": "/models/coin.x3d",
+      "modelScale": 2.0,
+      "value": 1
+    },
+    {
+      "id": "stairs1",
+      "type": "stairs",
+      "colliderType": "solid",
+      "position": { "x": 0, "y": 3, "z": 0 },
+      "size": { "x": 1, "y": 1, "z": 1 },
+      "step": { "x": 1, "y": 1 },
+      "value": 5,
+      "x3dUrl": "/models/brick.x3d",
+      "modelScale": 0.5
+    },
+    {
+      "id": "main_ground9m",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 0, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "main_ground9m_2",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": -12, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "main_ground9m_3",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 14, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "test_wall",
+      "type": "wall",
+      "colliderType": "solid",
+      "position": { "x": 10, "y": 2, "z": 0 },
+      "size": { "x": 1, "y": 4, "z": 2 },
+      "color": "0.5 0.5 0.6"
+    },
+    
+    {
+      "id": "test_moving_platform",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 15, "y": 2, "z": 0 },
+      "size": { "x": 3, "y": 0.5, "z": 2 },
+      "color": "0.6 0.8 0.6",
+      "move": { "axis": "y", "amplitude": 2, "speed": 0.5 }
+    },
+    
+    {
+      "id": "goal_pole",
+      "type": "goal",
+      "position": { "x": 40, "y": 3, "z": 0 },
+      "size": { "x": 0.4, "y": 6, "z": 0.4 }
+    },
+
+    { "id": "separator1", "type": "decor", "position": { "x": -12, "y": 0, "z": 0 }, "size": { "x": 0.1, "y": 3, "z": 0.1 }, "color": "1 0 0" },
+    { "id": "separator2", "type": "decor", "position": { "x": 0, "y": 0, "z": 0 }, "size": { "x": 0.1, "y": 3, "z": 0.1 }, "color": "1 0 0" },
+    { "id": "separator3", "type": "decor", "position": { "x": 12, "y": 0, "z": 0 }, "size": { "x": 0.1, "y": 3, "z": 0.1 }, "color": "1 0 0" },
+    { "id": "separator4", "type": "decor", "position": { "x": 24, "y": 0, "z": 0 }, "size": { "x": 0.1, "y": 3, "z": 0.1 }, "color": "1 0 0" }
+  ],
+  
+  "enemies": [
+    {
+      "id": "test_enemy",
+      "type": "grzegorz",
+      "position": { "x": 20, "y": 1, "z": 0 },
+      "speed": 1,
+      "patrolDistance": 3
+    }
+  ]
+}

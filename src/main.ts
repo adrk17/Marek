@@ -16,6 +16,7 @@ import { getIntent } from './systems/input';
 import { detectGoalHit } from './systems/goals';
 import { buildMovingPlatforms, updateMovingPlatforms, computeRideDeltaForPlayer, type MovingPlatformState } from './systems/platforms';
 import { buildEndlessPlatforms, updateEndlessPlatforms, computeVerticalRideDeltaForPlayer, type EndlessPlatformState } from './systems/endlessPlatforms';
+import { handleSpikeCollisions } from './systems/spikes';
 import { MenuUI } from './game/ui/MenuUI';
 import { loadLevelCatalog, type LevelManifest } from './game/LevelCatalog';
 import { getProfile, saveProfile, getLeaderboard, recordResult, computeScore, computeScoreBreakdown, type PlayerProfile, type RunResult } from './game/storage/GameStorage';
@@ -63,6 +64,7 @@ class Game {
     this.gameState = new GameState();
     this.uiManager = new UIManager();
     this.modelLoader = new ModelLoader();
+    this.modelLoader.setDebugConfig(this.config.debug);
     this.skyboxManager = new SkyboxManager(this.config.skybox);
     this.backgroundManager = undefined;
 
@@ -260,6 +262,9 @@ class Game {
 
     const activeForCollisions = getActiveEnemies(this.enemies, playerPosition.x, playerPosition.y, activeCollisionRadius);
     handleEnemyCollisions(activeForCollisions, this.player);
+
+    // Check spike collisions
+    handleSpikeCollisions(this.colliders, this.player);
 
     const gained = collectCoins(this.coins, this.player);
     if (gained > 0) {

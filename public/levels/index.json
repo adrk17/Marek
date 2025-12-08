@@ -14,5 +14,13 @@
     "description": "Test platforms moving in Z-axis and modelScale feature. Watch platforms move in and out of depth!",
     "difficulty": "Experimental",
     "author": "Dev Team"
+  },
+  {
+    "id": "templates",
+    "name": "Template Sandbox",
+    "file": "/levels/templates.json",
+    "description": "Debug level for testing 3D models. Enable showColliders to align models with colliders.",
+    "difficulty": "Debug",
+    "author": "Dev Team"
   }
 ]

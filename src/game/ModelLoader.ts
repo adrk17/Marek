@@ -2,6 +2,7 @@ import type { Collider } from '../engine/physics';
 import { ColliderType } from '../engine/collision';
 import type { Vec2, Vec3 } from '../engine/types';
 import { createStairs as createStairsFactory } from './factories/StairsFactory';
+import type { DebugConfig } from '../config/GameConfig';
 
 // Definitions for level JSON structure
 
@@ -17,7 +18,7 @@ export interface LevelData {
 
 export interface ModelDefinition {
   id: string;
-  type: 'ground' | 'platform' | 'wall' | 'player' | 'enemy' | 'coin' | 'custom' | 'stairs' | 'decor' | 'goal' | 'moving_platform' | 'endless_platform' | 'endless_group';
+  type: 'ground' | 'platform' | 'wall' | 'player' | 'enemy' | 'coin' | 'custom' | 'stairs' | 'decor' | 'goal' | 'moving_platform' | 'endless_platform' | 'endless_group' | 'spikes';
   colliderType?: ColliderType; // Optional for 'decor'
   position: Vec3;
   size?: Vec3; // Optional for 'decor'
@@ -69,6 +70,15 @@ export interface BackgroundConfig {
 }
 
 export class ModelLoader {
+  private debugConfig?: DebugConfig;
+
+  /**
+   * Set debug configuration for collider visualization
+   */
+  setDebugConfig(config: DebugConfig): void {
+    this.debugConfig = config;
+  }
+
   /**
    * Load level models from JSON and create colliders.
    * Each model will try to load X3D file if x3dUrl is provided,
@@ -93,6 +103,18 @@ export class ModelLoader {
           pos: model.position,
           size: sized,
           type: 'goal',
+          colliderType: ColliderType.TRIGGER,
+          node: node ?? undefined
+        });
+      } else if (model.type === 'spikes') {
+        // Spikes: always a trigger collider (player passes through but dies)
+        const sized: Vec3 = model.size ?? { x: 2, y: 0.5, z: 2 };
+        this.loadModelWithFallback({ ...model, size: sized });
+        const node = document.getElementById(model.id) as Element | null;
+        colliders.push({
+          pos: model.position,
+          size: sized,
+          type: 'spikes',
           colliderType: ColliderType.TRIGGER,
           node: node ?? undefined
         });
@@ -220,7 +242,59 @@ export class ModelLoader {
       targetParent.appendChild(shape);
     }
 
+    // Add debug collider wireframe if enabled and model has size
+    if (this.debugConfig?.showColliders && model.size) {
+      const colliderShape = this.createColliderWireframe(model);
+      transform.appendChild(colliderShape);
+    }
+
     scene.appendChild(transform);
+  }
+
+  /**
+   * Create a semi-transparent wireframe box to visualize the collider
+   */
+  private createColliderWireframe(model: ModelDefinition): Element {
+    const shape: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Shape');
+    
+    const appearance: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Appearance');
+    const material: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Material');
+    
+    const color = this.debugConfig?.colliderColor ?? '0 1 0';
+    const opacity = this.debugConfig?.colliderOpacity ?? 0.3;
+    
+    material.setAttribute('diffuseColor', color);
+    material.setAttribute('emissiveColor', color);
+    material.setAttribute('transparency', String(1 - opacity));
+    appearance.appendChild(material);
+    shape.appendChild(appearance);
+
+    // Create IndexedLineSet for wireframe box
+    const sx = model.size?.x ?? 1;
+    const sy = model.size?.y ?? 1;
+    const sz = model.size?.z ?? 1;
+    const hx = sx / 2, hy = sy / 2, hz = sz / 2;
+    
+    const lineSet: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'IndexedLineSet');
+    // 8 vertices of the box, 12 edges
+    lineSet.setAttribute('coordIndex', '0 1 2 3 0 -1 4 5 6 7 4 -1 0 4 -1 1 5 -1 2 6 -1 3 7 -1');
+    
+    const coord: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Coordinate');
+    coord.setAttribute('point', [
+      `${-hx} ${-hy} ${-hz}`, // 0
+      `${hx} ${-hy} ${-hz}`,  // 1
+      `${hx} ${hy} ${-hz}`,   // 2
+      `${-hx} ${hy} ${-hz}`,  // 3
+      `${-hx} ${-hy} ${hz}`,  // 4
+      `${hx} ${-hy} ${hz}`,   // 5
+      `${hx} ${hy} ${hz}`,    // 6
+      `${-hx} ${hy} ${hz}`    // 7
+    ].join(', '));
+    
+    lineSet.appendChild(coord);
+    shape.appendChild(lineSet);
+
+    return shape;
   }
 
   private createDefaultShape(model: ModelDefinition): Element {
@@ -255,6 +329,9 @@ export class ModelLoader {
           break;
         case 'decor':
           color = '0.6 0.2 0.8'; // purple for decorative fallback
+          break;
+        case 'spikes':
+          color = '0.4 0.2 0.2'; // dark red/brown for spikes
           break;
         default:
           color = '0.6 0.6 0.6'; // gray

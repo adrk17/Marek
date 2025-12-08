@@ -79,7 +79,9 @@
       "type": "coin",
       "colliderType": "trigger",
       "position": { "x": -10, "y": 3, "z": 0 },
-      "size": { "x": 0.6, "y": 0.6, "z": 0.6 },
+      "size": { "x": 0.8, "y": 0.8, "z": 0.8 },
+      "x3dUrl": "/models/coin.x3d",
+      "modelScale": 2.0,
       "value": 1
     },
     {
@@ -87,7 +89,9 @@
       "type": "coin",
       "colliderType": "trigger",
       "position": { "x": 8, "y": 3.5, "z": 0 },
-      "size": { "x": 0.6, "y": 0.6, "z": 0.6 },
+      "size": { "x": 0.8, "y": 0.8, "z": 0.8 },
+      "x3dUrl": "/models/coin.x3d",
+      "modelScale": 2.0,
       "value": 1
     },
     {
@@ -95,7 +99,9 @@
       "type": "coin",
       "colliderType": "trigger",
       "position": { "x": 18, "y": 4, "z": 0 },
-      "size": { "x": 0.6, "y": 0.6, "z": 0.6 },
+      "size": { "x": 0.8, "y": 0.8, "z": 0.8 },
+      "x3dUrl": "/models/coin.x3d",
+      "modelScale": 2.0,
       "value": 1
     },
     
@@ -105,6 +111,24 @@
       "colliderType": "solid",
       "position": { "x": 42, "y": -0.5, "z": 0 },
       "size": { "x": 30, "y": 1, "z": 10 }
+    },
+    { "id": "spikes1",
+      "type": "spikes",
+      "colliderType": "trigger",
+      "position": { "x": 32, "y": 0.25, "z": 0 },
+      "size": { "x": 2, "y": 0.5, "z": 2 }
+    },
+    { "id": "spikes2",
+      "type": "spikes",
+      "colliderType": "trigger",
+      "position": { "x": 38, "y": 0.25, "z": 0 },
+      "size": { "x": 1.5, "y": 0.5, "z": 2 }
+    },
+    { "id": "spikes3",
+      "type": "spikes",
+      "colliderType": "trigger",
+      "position": { "x": 50, "y": 0.25, "z": 0 },
+      "size": { "x": 3, "y": 0.5, "z": 2 }
     },
     { "id": "arena_wall_left",
       "type": "wall",

@@ -95,6 +95,12 @@ export interface EndlessPlatformsConfig {
   defaultSpacing: number; // vertical gap between platforms in group
 }
 
+export interface DebugConfig {
+  showColliders: boolean;      // Show wireframe collider boxes
+  colliderColor: string;       // RGB color for collider wireframes (e.g. "0 1 0" for green)
+  colliderOpacity: number;     // 0-1, transparency of collider visualization
+}
+
 export interface GameConfig {
   player: PlayerConfig;
   camera: CameraConfig;
@@ -107,6 +113,7 @@ export interface GameConfig {
   goal: GoalConfig;
   movingPlatforms: MovingPlatformsConfig;
   endlessPlatforms: EndlessPlatformsConfig;
+  debug: DebugConfig;
 }
 
 export interface PlayerDeathAnimationConfig {
@@ -208,6 +215,11 @@ export const DEFAULT_CONFIG: GameConfig = {
     enabled: true,
     defaultSpeed: 1.2,
     defaultSpacing: 2.5
+  },
+  debug: {
+    showColliders: true,     // Set to true to show wireframe collider boxes
+    colliderColor: '0 1 0',   // Green wireframe
+    colliderOpacity: 0.3
   }
 };
 
@@ -234,5 +246,6 @@ export function createConfig(overrides?: Partial<GameConfig>): GameConfig {
     ,goal: { ...DEFAULT_CONFIG.goal, ...(overrides as any)?.goal }
     ,movingPlatforms: { ...DEFAULT_CONFIG.movingPlatforms, ...(overrides as any)?.movingPlatforms }
     ,endlessPlatforms: { ...DEFAULT_CONFIG.endlessPlatforms, ...(overrides as any)?.endlessPlatforms }
+    ,debug: { ...DEFAULT_CONFIG.debug, ...(overrides as any)?.debug }
   };
 }
