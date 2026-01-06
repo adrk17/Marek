@@ -1,0 +1,233 @@
+{
+  "name": "Template Sandbox",
+  "description": "Debug level for testing and aligning 3D models with colliders",
+  "difficulty": "debug",
+  "backgroundConfig": {
+    "fallbackColor": "0.2 0.2 0.3"
+  },
+  "models": [
+    {
+      "id": "main_ground9m",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 0, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "main_ground9m_2",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": -12, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "main_ground9m_3",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 10, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "main_ground9m_35",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 19, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "main_ground9m_4",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 28, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "main_ground9m_5",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 42, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    
+    {
+      "id": "simple_platform",
+      "type": "platform",
+      "colliderType": "solid",
+      "position": { "x": -10, "y": 3, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { 
+      "id": "simple_wall",
+      "type": "wall",
+      "colliderType": "solid",
+      "position": { "x": 27, "y": 2.4, "z": 0 },
+      "size": { "x": 1, "y": 3, "z": 10 },
+      "x3dUrl": "/models/wall.x3d",
+      "modelScale": 0.5
+    },
+    {
+      "id": "coin1",
+      "type": "coin",
+      "colliderType": "trigger",
+      "position": { "x": 7, "y": 1.5, "z": 0 },
+      "size": { "x": 0.8, "y": 0.8, "z": 0.8 },
+      "x3dUrl": "/models/coin.x3d",
+      "modelScale": 2.0,
+      "value": 1
+    },
+    {
+      "id": "stairs_left",
+      "type": "stairs",
+      "colliderType": "solid",
+      "position": { "x": 0, "y": 3, "z": 0 },
+      "size": { "x": 1, "y": 1, "z": 1 },
+      "step": { "x": 1, "y": 1 },
+      "value": 5,
+      "x3dUrl": "/models/brick.x3d",
+      "modelScale": 0.5
+    },
+    {
+      "id": "stairs_right",
+      "type": "stairs",
+      "colliderType": "solid",
+      "position": { "x": 10, "y": 7, "z": 0 },
+      "size": { "x": 1, "y": 1, "z": 1 },
+      "step": { "x": 1, "y": -1 },
+      "value": 5,
+      "x3dUrl": "/models/brick.x3d",
+      "modelScale": 0.5
+    },
+ 
+    
+    { 
+      "id": "mp_vertical_slow",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 30, "y": 4, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": { "axis": "y", "amplitude": 1.5, "speed": 1.0, "phase": 0 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "mp_vertical_fast",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 35, "y": 4.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": { "axis": "y", "amplitude": 2.5, "speed": 2.2, "phase": 0.5 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "mp_horizontal_slow",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 45, "y": 4.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": { "axis": "x", "amplitude": 2.0, "speed": 0.8, "phase": 0 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "mp_horizontal_fast",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 56, "y": 4.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": { "axis": "x", "amplitude": 3, "speed": 1.8, "phase": 1.2 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    {
+      "id": "mp_horizontal_z",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 7, "y": 7, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": {"axis": "z", "amplitude": 3, "speed": 1, "phase": 0},
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "elevator_up",
+      "type": "endless_group",
+      "position": { "x": 60, "y": 12.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "endless": { "group": "elevator_up", "count": 20, "speed": -2, "spacing": 2 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "elevator_down",
+      "type": "endless_group",
+      "position": { "x": 65, "y": 12.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "endless": { "group": "elevator_down", "count": 20, "speed": 2, "spacing": 2 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "goal_pole",
+      "type": "goal",
+      "position": { "x": 70, "y": 4, "z": 0 },
+      "size": { "x": 0.4, "y": 10, "z": 0.4 },
+      "x3dUrl": "/models/goal.x3d",
+      "modelScale": 1
+    },
+    { 
+      "id": "lava",
+      "type": "spikes",
+      "colliderType": "trigger",
+      "position": { "x": 38, "y": 1.8, "z": 0 },
+      "size": { "x": 5, "y": 1, "z": 5 },
+      "x3dUrl": "/models/lava.x3d",
+      "modelScale": 0.5
+    }
+
+  ],
+  
+  "enemies": [
+    {
+      "id": "green_slime_template",
+      "position": { "x": 13, "y": 2, "z": 0 },
+      "type": "grzegorz",
+      "x3dUrl": "/models/green_slime.x3d",
+      "modelScale": 2.0,
+      "size": { "width": 0.9, "height": 0.8, "depth": 0.9 },
+      "speed": 2,
+      "patrolDistance": 3
+    },
+    {
+      "id": "turtle_template",
+      "position": { "x": 25, "y": 1, "z": 0 },
+      "type": "kacper",
+      "x3dUrl": "/models/turtle.x3d",
+      "modelScale": 1.8,
+      "size": { "width": 1.8, "height": 1, "depth": 1.0 },
+      "speed": 2,
+      "patrolDistance": 3,
+      "shellSpeed": 10
+    },
+    {
+      "id": "red_slime_template",
+      "position": { "x": 15, "y": 1, "z": 0 },
+      "type": "pawel_jumper",
+      "x3dUrl": "/models/red_slime.x3d",
+      "modelScale": 2.0,
+      "size": { "width": 0.9, "height": 0.8, "depth": 0.9 },
+      "speed": 1.5,
+      "patrolDistance": 2,
+      "jumpInterval": 2.5,
+      "jumpForce": 25
+    }
+  ]
+}

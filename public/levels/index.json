@@ -3,16 +3,8 @@
     "id": "test1",
     "name": "Test level 1",
     "file": "/levels/level1.json",
-    "description": "Learn the basics and meet every enemy type in one compact run.",
-    "difficulty": "Normal",
-    "author": "Dev Team"
-  },
-  {
-    "id": "test_z",
-    "name": "Z-Axis Platform Test",
-    "file": "/levels/test_z_platforms.json",
-    "description": "Test platforms moving in Z-axis and modelScale feature. Watch platforms move in and out of depth!",
-    "difficulty": "Experimental",
+    "description": "Test level, without any models",
+    "difficulty": "Debug",
     "author": "Dev Team"
   },
   {
@@ -21,6 +13,14 @@
     "file": "/levels/templates.json",
     "description": "Debug level for testing 3D models. Enable showColliders to align models with colliders.",
     "difficulty": "Debug",
+    "author": "Dev Team"
+  },
+  {
+    "id": "level1",
+    "name": "Level 1",
+    "file": "/levels/level_1.json",
+    "description": "Level 1",
+    "difficulty": "Normal",
     "author": "Dev Team"
   }
 ]
