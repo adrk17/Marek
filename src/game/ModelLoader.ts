@@ -131,7 +131,15 @@ export class ModelLoader {
         for (let i = 0; i < count; i++) {
           const y = topY - i * (spacing + size.y);
           const id = `${groupName}_${i}`;
-          this.loadModelWithFallback({ id, type: 'endless_platform' as any, position: { x, y, z }, size, color: model.color });
+          this.loadModelWithFallback({ 
+            id, 
+            type: 'endless_platform' as any, 
+            position: { x, y, z }, 
+            size, 
+            color: model.color,
+            x3dUrl: model.x3dUrl,
+            modelScale: model.modelScale
+          });
           const node = document.getElementById(id) as Element | null;
           colliders.push({
             pos: { x, y, z },

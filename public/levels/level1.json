@@ -40,13 +40,6 @@
       "size": { "x": 15, "y": 1, "z": 10 }
     },
     {
-      "id": "platform1",
-      "type": "platform",
-      "colliderType": "solid",
-      "position": { "x": -10, "y": 2, "z": 0 },
-      "size": { "x": 4, "y": 0.5, "z": 2 }
-    },
-    {
       "id": "platform2",
       "type": "platform",
       "colliderType": "solid",

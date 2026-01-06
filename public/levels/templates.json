@@ -6,52 +6,6 @@
     "fallbackColor": "0.2 0.2 0.3"
   },
   "models": [
-    
-    {
-      "id": "label_section1",
-      "type": "decor",
-      "position": { "x": -10, "y": 4, "z": -3 },
-      "size": { "x": 0.1, "y": 0.1, "z": 0.1 },
-      "color": "1 1 1"
-    },
-    
-    {
-      "id": "test_platform_1x1",
-      "type": "platform",
-      "colliderType": "solid",
-      "position": { "x": -10, "y": 1, "z": 0 },
-      "size": { "x": 1, "y": 1.5, "z": 1 },
-      "color": "0.8 0.6 0.4"
-    },
-    
-    {
-      "id": "test_spikes",
-      "type": "spikes",
-      "position": { "x": 3, "y": 12.25, "z": 0 },
-      "size": { "x": 2, "y": 0.5, "z": 2 }
-    },
-    
-    {
-      "id": "coin1",
-      "type": "coin",
-      "colliderType": "trigger",
-      "position": { "x": 7, "y": 1.5, "z": 0 },
-      "size": { "x": 0.8, "y": 0.8, "z": 0.8 },
-      "x3dUrl": "/models/coin.x3d",
-      "modelScale": 2.0,
-      "value": 1
-    },
-    {
-      "id": "stairs1",
-      "type": "stairs",
-      "colliderType": "solid",
-      "position": { "x": 0, "y": 3, "z": 0 },
-      "size": { "x": 1, "y": 1, "z": 1 },
-      "step": { "x": 1, "y": 1 },
-      "value": 5,
-      "x3dUrl": "/models/brick.x3d",
-      "modelScale": 0.5
-    },
     {
       "id": "main_ground9m",
       "type": "ground",
@@ -80,44 +34,153 @@
       "modelScale": 1.0
     },
     {
-      "id": "test_wall",
+      "id": "main_ground9m_4",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 28, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    {
+      "id": "main_ground9m_5",
+      "type": "ground",
+      "colliderType": "solid",
+      "position": { "x": 42, "y": -0.2, "z": 0 },
+      "size": { "x": 9, "y": 2.16, "z": 10 },
+      "x3dUrl": "/models/grasspatch.x3d",
+      "modelScale": 1.0
+    },
+    
+    {
+      "id": "simple_platform",
+      "type": "platform",
+      "colliderType": "solid",
+      "position": { "x": -10, "y": 3, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { 
+      "id": "simple_wall",
       "type": "wall",
       "colliderType": "solid",
-      "position": { "x": 10, "y": 2, "z": 0 },
-      "size": { "x": 1, "y": 4, "z": 2 },
-      "color": "0.5 0.5 0.6"
+      "position": { "x": 27, "y": 2.4, "z": 0 },
+      "size": { "x": 1, "y": 3, "z": 10 }
     },
-    
     {
-      "id": "test_moving_platform",
+      "id": "coin1",
+      "type": "coin",
+      "colliderType": "trigger",
+      "position": { "x": 7, "y": 1.5, "z": 0 },
+      "size": { "x": 0.8, "y": 0.8, "z": 0.8 },
+      "x3dUrl": "/models/coin.x3d",
+      "modelScale": 2.0,
+      "value": 1
+    },
+    {
+      "id": "stairs_left",
+      "type": "stairs",
+      "colliderType": "solid",
+      "position": { "x": 0, "y": 3, "z": 0 },
+      "size": { "x": 1, "y": 1, "z": 1 },
+      "step": { "x": 1, "y": 1 },
+      "value": 5,
+      "x3dUrl": "/models/brick.x3d",
+      "modelScale": 0.5
+    },
+    {
+      "id": "stairs_right",
+      "type": "stairs",
+      "colliderType": "solid",
+      "position": { "x": 10, "y": 7, "z": 0 },
+      "size": { "x": 1, "y": 1, "z": 1 },
+      "step": { "x": 1, "y": -1 },
+      "value": 5,
+      "x3dUrl": "/models/brick.x3d",
+      "modelScale": 0.5
+    },
+ 
+    
+    { 
+      "id": "mp_vertical_slow",
       "type": "moving_platform",
       "colliderType": "solid",
-      "position": { "x": 15, "y": 2, "z": 0 },
-      "size": { "x": 3, "y": 0.5, "z": 2 },
-      "color": "0.6 0.8 0.6",
-      "move": { "axis": "y", "amplitude": 2, "speed": 0.5 }
+      "position": { "x": 30, "y": 4, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": { "axis": "y", "amplitude": 1.5, "speed": 1.0, "phase": 0 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
     },
-    
+    { "id": "mp_vertical_fast",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 35, "y": 4.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": { "axis": "y", "amplitude": 2.5, "speed": 2.2, "phase": 0.5 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "mp_horizontal_slow",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 45, "y": 4.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": { "axis": "x", "amplitude": 2.0, "speed": 0.8, "phase": 0 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "mp_horizontal_fast",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 56, "y": 4.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": { "axis": "x", "amplitude": 3, "speed": 1.8, "phase": 1.2 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
     {
-      "id": "goal_pole",
-      "type": "goal",
-      "position": { "x": 40, "y": 3, "z": 0 },
-      "size": { "x": 0.4, "y": 6, "z": 0.4 }
+      "id": "mp_horizontal_z",
+      "type": "moving_platform",
+      "colliderType": "solid",
+      "position": { "x": 7, "y": 7, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "move": {"axis": "z", "amplitude": 3, "speed": 1, "phase": 0},
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
     },
+    { "id": "elevator_up",
+      "type": "endless_group",
+      "position": { "x": 60, "y": 12.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "endless": { "group": "elevator_up", "count": 20, "speed": -4, "spacing": 2 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "elevator_down",
+      "type": "endless_group",
+      "position": { "x": 65, "y": 12.0, "z": 0 },
+      "size": { "x": 4, "y": 1, "z": 2 },
+      "endless": { "group": "elevator_down", "count": 20, "speed": 4, "spacing": 2 },
+      "x3dUrl": "/models/platform.x3d",
+      "modelScale": 0.5
+    },
+    { "id": "goal_pole",
+      "type": "goal",
+      "position": { "x": 68, "y": 8, "z": 0 },
+      "size": { "x": 0.4, "y": 7, "z": 0.4 }
+    },
+    { 
+      "id": "spikes1",
+      "type": "spikes",
+      "colliderType": "trigger",
+      "position": { "x": 38, "y": 2, "z": 0 },
+      "size": { "x": 4, "y": 0.5, "z": 2 }
+    }
 
-    { "id": "separator1", "type": "decor", "position": { "x": -12, "y": 0, "z": 0 }, "size": { "x": 0.1, "y": 3, "z": 0.1 }, "color": "1 0 0" },
-    { "id": "separator2", "type": "decor", "position": { "x": 0, "y": 0, "z": 0 }, "size": { "x": 0.1, "y": 3, "z": 0.1 }, "color": "1 0 0" },
-    { "id": "separator3", "type": "decor", "position": { "x": 12, "y": 0, "z": 0 }, "size": { "x": 0.1, "y": 3, "z": 0.1 }, "color": "1 0 0" },
-    { "id": "separator4", "type": "decor", "position": { "x": 24, "y": 0, "z": 0 }, "size": { "x": 0.1, "y": 3, "z": 0.1 }, "color": "1 0 0" }
   ],
   
   "enemies": [
-    {
-      "id": "test_enemy",
-      "type": "grzegorz",
-      "position": { "x": 20, "y": 1, "z": 0 },
-      "speed": 1,
-      "patrolDistance": 3
-    }
+   
   ]
 }
