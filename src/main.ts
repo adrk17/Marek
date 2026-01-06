@@ -21,6 +21,7 @@ import { MenuUI } from './game/ui/MenuUI';
 import { loadLevelCatalog, type LevelManifest } from './game/LevelCatalog';
 import { getProfile, saveProfile, getLeaderboard, recordResult, computeScore, computeScoreBreakdown, type PlayerProfile, type RunResult } from './game/storage/GameStorage';
 import { BackgroundManager } from './game/BackgroundManager';
+import { LoadingScreen } from './game/LoadingScreen';
 
 interface GameSessionOptions {
   manifest: LevelManifest;
@@ -90,6 +91,10 @@ class Game {
     this.uiManager.updateScore(0);
     this.uiManager.updateTime(0);
 
+    // Show loading screen
+    const loadingScreen = new LoadingScreen();
+    loadingScreen.show();
+
     await this.loadLevel(this.manifest.file);
 
     this.player = new Player('player', this.config.player, this.config.physics);
@@ -100,11 +105,36 @@ class Game {
     this.levelLoaded = true;
     this.uiManager.updateScore(0);
     console.log(`Level "${this.manifest.name}" ready. Starting game loop.`);
+
+    // Wait for X3DOM runtime to process scene (give it time to load models)
+    await this.waitForX3DOMReady(loadingScreen);
+
+    // Hide loading screen
+    await loadingScreen.hide();
   }
 
   start(): void {
     this.lastTime = performance.now();
     requestAnimationFrame((time: number) => this.loop(time));
+  }
+
+  private async waitForX3DOMReady(loadingScreen: LoadingScreen): Promise<void> {
+    return new Promise((resolve) => {
+      // Simple time-based loading simulation
+      const maxWaitTime = 2000; // 2 seconds
+      const startTime = Date.now();
+      
+      const progressInterval = window.setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / maxWaitTime, 1);
+        loadingScreen.progressFill.style.width = `${progress * 100}%`;
+        
+        if (progress >= 1) {
+          clearInterval(progressInterval);
+          resolve();
+        }
+      }, 50);
+    });
   }
 
   private async loadLevel(levelUrl: string): Promise<void> {

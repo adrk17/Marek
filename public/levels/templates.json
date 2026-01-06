@@ -167,15 +167,19 @@
     },
     { "id": "goal_pole",
       "type": "goal",
-      "position": { "x": 68, "y": 8, "z": 0 },
-      "size": { "x": 0.4, "y": 7, "z": 0.4 }
+      "position": { "x": 20, "y": 4, "z": 0 },
+      "size": { "x": 0.4, "y": 10, "z": 0.4 },
+      "x3dUrl": "/models/goal.x3d",
+      "modelScale": 1
     },
     { 
-      "id": "spikes1",
+      "id": "lava",
       "type": "spikes",
       "colliderType": "trigger",
-      "position": { "x": 38, "y": 2, "z": 0 },
-      "size": { "x": 4, "y": 0.5, "z": 2 }
+      "position": { "x": 38, "y": 1.8, "z": 0 },
+      "size": { "x": 5, "y": 1, "z": 5 },
+      "x3dUrl": "/models/lava.x3d",
+      "modelScale": 0.5
     }
 
   ],
