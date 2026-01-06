@@ -55,17 +55,6 @@ export interface CoinConfig {
   value: number;
 }
 
-export interface EnemyConfig {
-  speed: number;
-  patrolDistance: number;
-  size: {
-    width: number;
-    height: number;
-    depth: number;
-  };
-  shellSpeed?: number;
-}
-
 export interface ActivationConfig {
   // Only entities within this radius from the player are updated
   enemyUpdateRadius: number;
@@ -108,7 +97,6 @@ export interface GameConfig {
   physics: PhysicsConfig;
   skybox: SkyboxConfig;
   coin: CoinConfig;
-  enemy: EnemyConfig;
   activation: ActivationConfig;
   goal: GoalConfig;
   movingPlatforms: MovingPlatformsConfig;
@@ -185,15 +173,6 @@ export const DEFAULT_CONFIG: GameConfig = {
     size: 0.6,
     value: 1
   },
-  enemy: {
-    speed: 2,
-    patrolDistance: 3,
-    size: {
-      width: 0.8,
-      height: 0.8,
-      depth: 0.8
-    }
-  },
   activation: {
     enemyUpdateRadius: 24,
     enemyCollisionRadius: 26
@@ -237,11 +216,6 @@ export function createConfig(overrides?: Partial<GameConfig>): GameConfig {
     physics: { ...DEFAULT_CONFIG.physics, ...overrides?.physics },
     skybox: { ...DEFAULT_CONFIG.skybox, ...overrides?.skybox },
     coin: { ...DEFAULT_CONFIG.coin, ...overrides?.coin },
-    enemy: { 
-      ...DEFAULT_CONFIG.enemy, 
-      ...overrides?.enemy,
-      size: { ...DEFAULT_CONFIG.enemy.size, ...overrides?.enemy?.size }
-    },
     activation: { ...DEFAULT_CONFIG.activation, ...(overrides as any)?.activation }
     ,goal: { ...DEFAULT_CONFIG.goal, ...(overrides as any)?.goal }
     ,movingPlatforms: { ...DEFAULT_CONFIG.movingPlatforms, ...(overrides as any)?.movingPlatforms }

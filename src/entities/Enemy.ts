@@ -66,6 +66,54 @@ export class Enemy implements ICollidable {
     }
   }
 
+  /**
+   * Add debug collider wireframe visualization to enemy
+   */
+  addDebugCollider(debugConfig: { showColliders: boolean; colliderColor: string; colliderOpacity: number }): void {
+    if (!debugConfig.showColliders) return;
+
+    const shape: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Shape');
+    shape.setAttribute('id', `${this.node.id}-debug-collider`);
+    
+    const appearance: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Appearance');
+    const material: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Material');
+    
+    const color = '1 1 0'; // Yellow for enemies
+    const opacity = debugConfig.colliderOpacity ?? 0.5;
+    
+    material.setAttribute('diffuseColor', color);
+    material.setAttribute('emissiveColor', color);
+    material.setAttribute('transparency', String(1 - opacity));
+    appearance.appendChild(material);
+    shape.appendChild(appearance);
+
+    // Create IndexedLineSet for wireframe box
+    const hx = this.size.x / 2;
+    const hy = this.size.y / 2;
+    const hz = this.size.z / 2;
+    
+    const lineSet: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'IndexedLineSet');
+    // 8 vertices of the box, 12 edges
+    lineSet.setAttribute('coordIndex', '0 1 2 3 0 -1 4 5 6 7 4 -1 0 4 -1 1 5 -1 2 6 -1 3 7 -1');
+    
+    const coord: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Coordinate');
+    coord.setAttribute('point', [
+      `${-hx} ${-hy} ${-hz}`, // 0
+      `${hx} ${-hy} ${-hz}`,  // 1
+      `${hx} ${hy} ${-hz}`,   // 2
+      `${-hx} ${hy} ${-hz}`,  // 3
+      `${-hx} ${-hy} ${hz}`,  // 4
+      `${hx} ${-hy} ${hz}`,   // 5
+      `${hx} ${hy} ${hz}`,    // 6
+      `${-hx} ${hy} ${hz}`    // 7
+    ].join(', '));
+    
+    lineSet.appendChild(coord);
+    shape.appendChild(lineSet);
+    
+    this.node.appendChild(shape);
+  }
+
   update(deltaTime: number, colliders: Collider[], otherEnemies?: Enemy[]): void {
     if (!this.alive) return;
 

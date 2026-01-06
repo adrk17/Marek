@@ -16,7 +16,7 @@ export class LoadingScreen {
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(0, 0, 0, 0.99);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -99,6 +99,11 @@ export class LoadingScreen {
     } else {
       this.statusText.textContent = 'Ready!';
     }
+  }
+
+  setProgress(progress: number): void {
+    const percentage = Math.max(0, Math.min(100, progress));
+    this.progressFill.style.width = `${percentage}%`;
   }
 
   async hide(): Promise<void> {

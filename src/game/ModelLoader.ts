@@ -43,6 +43,10 @@ export interface EnemyDefinition {
   patrolDistance?: number;
   jumpInterval?: number;
   jumpForce?: number;
+  size?: { width: number; height: number; depth: number };
+  x3dUrl?: string;
+  modelScale?: number | { x: number; y: number; z: number };
+  rotation?: Vec3;
 }
 
 export interface BackgroundConfig {
@@ -384,41 +388,98 @@ export class ModelLoader {
       transform.setAttribute('class', 'enemy');
       transform.setAttribute('id', enemy.id);
 
-      const shape: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Shape');
-      
-      const appearance: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Appearance');
-      const material: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Material');
-      
-      // Different colors for different enemy types
-      let color: string;
-      switch (enemy.type) {
-        case 'grzegorz':
-          color = '0.6 0.3 0.15'; // Brown (slow patrol)
-          break;
-        case 'kacper':
-          color = '0.2 0.7 0.3'; // Green (fast patrol)
-          break;
-        case 'pawel_jumper':
-          color = '0.9 0.6 0.2'; // Orange (jumps)
-          break;
-        default:
-          color = '0.9 0.2 0.2'; // Red (fallback)
+      // Apply rotation if provided
+      if (enemy.rotation) {
+        const rx = (enemy.rotation.x || 0) * Math.PI / 180;
+        const ry = (enemy.rotation.y || 0) * Math.PI / 180;
+        const rz = (enemy.rotation.z || 0) * Math.PI / 180;
+        
+        if (ry !== 0) {
+          transform.setAttribute('rotation', `0 1 0 ${ry}`);
+        } else if (rx !== 0) {
+          transform.setAttribute('rotation', `1 0 0 ${rx}`);
+        } else if (rz !== 0) {
+          transform.setAttribute('rotation', `0 0 1 ${rz}`);
+        }
       }
-      
-      material.setAttribute('diffuseColor', color);
-      material.setAttribute('specularColor', '0.2 0.1 0.1');
-      material.setAttribute('shininess', '0.1');
-      appearance.appendChild(material);
-      shape.appendChild(appearance);
 
-      // Small red cube - 0.8x0.8x0.8
-      const box: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Box');
-      box.setAttribute('size', '0.8 0.8 0.8');
-      shape.appendChild(box);
+      // Check if enemy has X3D model
+      if (enemy.x3dUrl) {
+        // Create nested transform for model scaling
+        let targetParent: Element = transform;
+        if (enemy.modelScale !== undefined) {
+          const modelTransform: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
+          if (typeof enemy.modelScale === 'number') {
+            const s = enemy.modelScale;
+            modelTransform.setAttribute('scale', `${s} ${s} ${s}`);
+          } else {
+            const sx = enemy.modelScale.x ?? 1;
+            const sy = enemy.modelScale.y ?? 1;
+            const sz = enemy.modelScale.z ?? 1;
+            modelTransform.setAttribute('scale', `${sx} ${sy} ${sz}`);
+          }
+          transform.appendChild(modelTransform);
+          targetParent = modelTransform;
+        }
 
-      transform.appendChild(shape);
+        // Load X3D model
+        const inline: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Inline');
+        inline.setAttribute('url', enemy.x3dUrl);
+        inline.addEventListener('load', () => {
+          console.log(`Loaded X3D model for enemy: ${enemy.x3dUrl}`);
+        });
+        inline.addEventListener('error', () => {
+          console.warn(`Failed to load X3D model for enemy: ${enemy.x3dUrl}, using default box`);
+          targetParent.appendChild(this.createDefaultEnemyShape(enemy));
+        });
+        targetParent.appendChild(inline);
+      } else {
+        // Use default box
+        transform.appendChild(this.createDefaultEnemyShape(enemy));
+      }
+
       scene.appendChild(transform);
     }
+  }
+
+  /**
+   * Create default box shape for enemy
+   */
+  private createDefaultEnemyShape(enemy: EnemyDefinition): Element {
+    const shape: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Shape');
+    
+    const appearance: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Appearance');
+    const material: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Material');
+    
+    // Different colors for different enemy types
+    let color: string;
+    switch (enemy.type) {
+      case 'grzegorz':
+        color = '0.6 0.3 0.15'; // Brown (slow patrol)
+        break;
+      case 'kacper':
+        color = '0.2 0.7 0.3'; // Green (turtle)
+        break;
+      case 'pawel_jumper':
+        color = '0.9 0.6 0.2'; // Orange (jumps)
+        break;
+      default:
+        color = '0.9 0.2 0.2'; // Red (fallback)
+    }
+    
+    material.setAttribute('diffuseColor', color);
+    material.setAttribute('specularColor', '0.2 0.1 0.1');
+    material.setAttribute('shininess', '0.1');
+    appearance.appendChild(material);
+    shape.appendChild(appearance);
+
+    // Box size based on enemy size config or default
+    const size = enemy.size || { width: 0.8, height: 0.8, depth: 0.8 };
+    const box: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Box');
+    box.setAttribute('size', `${size.width} ${size.height} ${size.depth}`);
+    shape.appendChild(box);
+
+    return shape;
   }
 
   loadLevelFromFile(url: string): Promise<LevelData> {

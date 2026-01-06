@@ -120,5 +120,40 @@
       "rotation": { "x": 0, "y": 45, "z": 0 },
       "modelScale": 1.8
     }
+  ],
+  "enemies": [
+    {
+      "id": "green_slime1",
+      "position": { "x": 5, "y": 0.5, "z": 0 },
+      "type": "grzegorz",
+      "x3dUrl": "/models/green_slime.x3d",
+      "modelScale": 1.5,
+      "size": { "width": 0.8, "height": 0.6, "depth": 0.8 },
+      "speed": 2,
+      "patrolDistance": 4
+    },
+    {
+      "id": "turtle1",
+      "position": { "x": 20, "y": 0.5, "z": 0 },
+      "type": "kacper",
+      "x3dUrl": "/models/turtle.x3d",
+      "modelScale": 1.2,
+      "size": { "width": 1.0, "height": 0.8, "depth": 1.0 },
+      "speed": 3,
+      "patrolDistance": 3,
+      "shellSpeed": 8
+    },
+    {
+      "id": "red_slime1",
+      "position": { "x": 30, "y": 0.5, "z": 0 },
+      "type": "pawel_jumper",
+      "x3dUrl": "/models/red_slime.x3d",
+      "modelScale": 1.5,
+      "size": { "width": 0.8, "height": 0.6, "depth": 0.8 },
+      "speed": 1.5,
+      "patrolDistance": 2,
+      "jumpInterval": 2.5,
+      "jumpForce": 15
+    }
   ]
 }

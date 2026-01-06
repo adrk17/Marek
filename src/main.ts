@@ -128,7 +128,7 @@ class Game {
       const progressInterval = window.setInterval(() => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / maxWaitTime, 1);
-        loadingScreen.progressFill.style.width = `${progress * 100}%`;
+        loadingScreen.setProgress(progress * 100);
         
         if (progress >= 1) {
           clearInterval(progressInterval);
@@ -181,19 +181,24 @@ class Game {
           return null;
         }
 
-        return new Enemy(
+        const enemy = new Enemy(
           enemyDef.id,
           { x: enemyDef.position.x, y: enemyDef.position.y },
           {
-            size: { width: 0.8, height: 0.8, depth: 0.8 },
+            size: enemyDef.size || { width: 0.8, height: 0.8, depth: 0.8 },
             speed: enemyDef.speed || 2,
-            patrolDistance: enemyDef.patrolDistance || 2,
+            patrolDistance: enemyDef.patrolDistance || 3,
             behaviorType: enemyDef.type || 'grzegorz',
             jumpInterval: enemyDef.jumpInterval,
             jumpForce: enemyDef.jumpForce
           },
           this.config.physics
         );
+        
+        // Add debug collider if enabled
+        enemy.addDebugCollider(this.config.debug);
+        
+        return enemy;
       }).filter((enemy): enemy is Enemy => enemy !== null);
 
       this.movingPlatforms = buildMovingPlatforms(this.colliders, this.config.movingPlatforms);
