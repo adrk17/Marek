@@ -73,25 +73,15 @@ export class Player implements ICollidable {
     appearance.appendChild(material);
     shape.appendChild(appearance);
 
-    // Create IndexedLineSet for wireframe box
-    const hx = this.size.x / 2;
-    const hy = this.size.y / 2;
-    const hz = this.size.z / 2;
+    const hx = this.size.x / 2, hy = this.size.y / 2, hz = this.size.z / 2;
     
     const lineSet: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'IndexedLineSet');
-    // 8 vertices of the box, 12 edges
     lineSet.setAttribute('coordIndex', '0 1 2 3 0 -1 4 5 6 7 4 -1 0 4 -1 1 5 -1 2 6 -1 3 7 -1');
     
     const coord: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Coordinate');
     coord.setAttribute('point', [
-      `${-hx} ${-hy} ${-hz}`, // 0
-      `${hx} ${-hy} ${-hz}`,  // 1
-      `${hx} ${hy} ${-hz}`,   // 2
-      `${-hx} ${hy} ${-hz}`,  // 3
-      `${-hx} ${-hy} ${hz}`,  // 4
-      `${hx} ${-hy} ${hz}`,   // 5
-      `${hx} ${hy} ${hz}`,    // 6
-      `${-hx} ${hy} ${hz}`    // 7
+      `${-hx} ${-hy} ${-hz}`, `${hx} ${-hy} ${-hz}`, `${hx} ${hy} ${-hz}`, `${-hx} ${hy} ${-hz}`,
+      `${-hx} ${-hy} ${hz}`, `${hx} ${-hy} ${hz}`, `${hx} ${hy} ${hz}`, `${-hx} ${hy} ${hz}`
     ].join(', '));
     
     lineSet.appendChild(coord);
@@ -334,10 +324,6 @@ export class Player implements ICollidable {
   // Called when player stomps on enemy - small bounce
   stompBounce(): void {
     this.velocity.y = this.config.jumpForce * 0.6;
-  }
-
-  isInvincible(): boolean {
-    return this.invincible;
   }
 
   kill(): void {

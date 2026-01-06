@@ -29,9 +29,7 @@ export function createStairs(model: ModelDefinition & { size: Vec3 }): Collider[
       // Create model transform for scaling
       const modelTransform: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
       if (model.modelScale !== undefined) {
-        const scale = typeof model.modelScale === 'number' 
-          ? model.modelScale 
-          : model.modelScale;
+        const scale = model.modelScale;
         if (typeof scale === 'number') {
           modelTransform.setAttribute('scale', `${scale} ${scale} ${scale}`);
         } else {

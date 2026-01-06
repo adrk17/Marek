@@ -252,7 +252,7 @@ class Game {
       }
     }
 
-    if (!this.gameState.isPaused && !this.gameState.isGameOver && !this.gameState.isDying) {
+    if (!this.gameState.isPaused && !this.gameState.isDying) {
       this.update(deltaTime);
     }
 

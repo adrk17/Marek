@@ -80,6 +80,57 @@ export class ModelLoader {
   }
 
   /**
+   * Convert Euler angles (degrees) to X3D rotation (axis-angle in radians)
+   * Simplified: uses only one axis at a time (priority: Y > X > Z)
+   */
+  private applyRotation(transform: Element, rotation: Vec3): void {
+    const rx = (rotation.x || 0) * Math.PI / 180;
+    const ry = (rotation.y || 0) * Math.PI / 180;
+    const rz = (rotation.z || 0) * Math.PI / 180;
+    
+    if (ry !== 0) {
+      transform.setAttribute('rotation', `0 1 0 ${ry}`);
+    } else if (rx !== 0) {
+      transform.setAttribute('rotation', `1 0 0 ${rx}`);
+    } else if (rz !== 0) {
+      transform.setAttribute('rotation', `0 0 1 ${rz}`);
+    }
+  }
+
+  /**
+   * Apply scale to transform element (handles both uniform and per-axis scaling)
+   */
+  private applyScale(transform: Element, scale: number | Vec3): void {
+    if (typeof scale === 'number') {
+      transform.setAttribute('scale', `${scale} ${scale} ${scale}`);
+    } else {
+      const sx = scale.x ?? 1;
+      const sy = scale.y ?? 1;
+      const sz = scale.z ?? 1;
+      transform.setAttribute('scale', `${sx} ${sy} ${sz}`);
+    }
+  }
+
+  /**
+   * Create wireframe box for collider visualization
+   */
+  private createWireframeBox(size: Vec3): Element {
+    const hx = size.x / 2, hy = size.y / 2, hz = size.z / 2;
+    
+    const lineSet: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'IndexedLineSet');
+    lineSet.setAttribute('coordIndex', '0 1 2 3 0 -1 4 5 6 7 4 -1 0 4 -1 1 5 -1 2 6 -1 3 7 -1');
+    
+    const coord: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Coordinate');
+    coord.setAttribute('point', [
+      `${-hx} ${-hy} ${-hz}`, `${hx} ${-hy} ${-hz}`, `${hx} ${hy} ${-hz}`, `${-hx} ${hy} ${-hz}`,
+      `${-hx} ${-hy} ${hz}`, `${hx} ${-hy} ${hz}`, `${hx} ${hy} ${hz}`, `${-hx} ${hy} ${hz}`
+    ].join(', '));
+    
+    lineSet.appendChild(coord);
+    return lineSet;
+  }
+
+  /**
    * Load level models from JSON and create colliders.
    * Each model will try to load X3D file if x3dUrl is provided,
    * otherwise falls back to default shape based on size parameters.
@@ -194,36 +245,16 @@ export class ModelLoader {
     transform.setAttribute('class', model.type);
     transform.setAttribute('id', model.id);
 
-    // Apply rotation if provided (single rotation axis-angle)
+    // Apply rotation if provided
     if (model.rotation) {
-      const rx = (model.rotation.x || 0) * Math.PI / 180;
-      const ry = (model.rotation.y || 0) * Math.PI / 180;
-      const rz = (model.rotation.z || 0) * Math.PI / 180;
-      
-      // Convert Euler angles to axis-angle (simplified - assumes ZYX order)
-      // For most cases, Y rotation (yaw) is most common
-      if (ry !== 0) {
-        transform.setAttribute('rotation', `0 1 0 ${ry}`);
-      } else if (rx !== 0) {
-        transform.setAttribute('rotation', `1 0 0 ${rx}`);
-      } else if (rz !== 0) {
-        transform.setAttribute('rotation', `0 0 1 ${rz}`);
-      }
+      this.applyRotation(transform, model.rotation);
     }
 
     // Create nested transform for model-only scaling
     let targetParent: Element = transform;
     if (model.modelScale !== undefined && model.modelScale !== null) {
       const modelTransform: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
-      if (typeof model.modelScale === 'number') {
-        const s = model.modelScale;
-        modelTransform.setAttribute('scale', `${s} ${s} ${s}`);
-      } else {
-        const sx = model.modelScale.x ?? 1;
-        const sy = model.modelScale.y ?? 1;
-        const sz = model.modelScale.z ?? 1;
-        modelTransform.setAttribute('scale', `${sx} ${sy} ${sz}`);
-      }
+      this.applyScale(modelTransform, model.modelScale);
       transform.appendChild(modelTransform);
       targetParent = modelTransform;
     }
@@ -277,29 +308,8 @@ export class ModelLoader {
     appearance.appendChild(material);
     shape.appendChild(appearance);
 
-    // Create IndexedLineSet for wireframe box
-    const sx = model.size?.x ?? 1;
-    const sy = model.size?.y ?? 1;
-    const sz = model.size?.z ?? 1;
-    const hx = sx / 2, hy = sy / 2, hz = sz / 2;
-    
-    const lineSet: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'IndexedLineSet');
-    // 8 vertices of the box, 12 edges
-    lineSet.setAttribute('coordIndex', '0 1 2 3 0 -1 4 5 6 7 4 -1 0 4 -1 1 5 -1 2 6 -1 3 7 -1');
-    
-    const coord: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Coordinate');
-    coord.setAttribute('point', [
-      `${-hx} ${-hy} ${-hz}`, // 0
-      `${hx} ${-hy} ${-hz}`,  // 1
-      `${hx} ${hy} ${-hz}`,   // 2
-      `${-hx} ${hy} ${-hz}`,  // 3
-      `${-hx} ${-hy} ${hz}`,  // 4
-      `${hx} ${-hy} ${hz}`,   // 5
-      `${hx} ${hy} ${hz}`,    // 6
-      `${-hx} ${hy} ${hz}`    // 7
-    ].join(', '));
-    
-    lineSet.appendChild(coord);
+    const size = { x: model.size?.x ?? 1, y: model.size?.y ?? 1, z: model.size?.z ?? 1 };
+    const lineSet = this.createWireframeBox(size);
     shape.appendChild(lineSet);
 
     return shape;
@@ -386,17 +396,7 @@ export class ModelLoader {
 
       // Apply rotation if provided
       if (enemy.rotation) {
-        const rx = (enemy.rotation.x || 0) * Math.PI / 180;
-        const ry = (enemy.rotation.y || 0) * Math.PI / 180;
-        const rz = (enemy.rotation.z || 0) * Math.PI / 180;
-        
-        if (ry !== 0) {
-          transform.setAttribute('rotation', `0 1 0 ${ry}`);
-        } else if (rx !== 0) {
-          transform.setAttribute('rotation', `1 0 0 ${rx}`);
-        } else if (rz !== 0) {
-          transform.setAttribute('rotation', `0 0 1 ${rz}`);
-        }
+        this.applyRotation(transform, enemy.rotation);
       }
 
       // Check if enemy has X3D model
@@ -407,15 +407,7 @@ export class ModelLoader {
         
         // Apply scale if provided
         if (enemy.modelScale !== undefined) {
-          if (typeof enemy.modelScale === 'number') {
-            const s = enemy.modelScale;
-            modelTransform.setAttribute('scale', `${s} ${s} ${s}`);
-          } else {
-            const sx = enemy.modelScale.x ?? 1;
-            const sy = enemy.modelScale.y ?? 1;
-            const sz = enemy.modelScale.z ?? 1;
-            modelTransform.setAttribute('scale', `${sx} ${sy} ${sz}`);
-          }
+          this.applyScale(modelTransform, enemy.modelScale);
         }
         
         // Add translation offset to move model down (adjust visually)
