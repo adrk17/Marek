@@ -195,6 +195,12 @@ class Game {
           this.config.physics
         );
         
+        // Set model node reference for rotation (if enemy has a model)
+        const modelNode = document.getElementById(`${enemyDef.id}-model`);
+        if (modelNode) {
+          enemy.setModelNode(modelNode);
+        }
+        
         // Add debug collider if enabled
         enemy.addDebugCollider(this.config.debug);
         

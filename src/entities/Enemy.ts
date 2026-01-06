@@ -23,6 +23,7 @@ export interface EnemyConfig {
 
 export class Enemy implements ICollidable {
   private node: Element;
+  private modelNode: Element | null = null;
   private size: Vec3;
   private position: Vec2;
   private velocity: Vec2 = { x: 0, y: 0 };
@@ -64,6 +65,27 @@ export class Enemy implements ICollidable {
       default:
         this.behavior = new PatrolBehavior(this);
     }
+  }
+
+  /**
+   * Set reference to model node for rotation control
+   */
+  setModelNode(modelNode: Element): void {
+    this.modelNode = modelNode;
+    this.updateModelRotation();
+  }
+
+  private updateModelRotation(): void {
+    if (!this.modelNode) return;
+    
+    // Only turtle rotates based on direction
+    const isTurtle = this.config.behaviorType === 'kacper';
+    
+    if (isTurtle) {
+      const yRotation = this.direction === 1 ? '1.5708' : '-1.5708';
+      this.modelNode.setAttribute('rotation', `0 1 0 ${yRotation}`);
+    }
+    // Other enemies (slimes) don't rotate
   }
 
   /**
@@ -243,6 +265,7 @@ export class Enemy implements ICollidable {
   reverseDirection(): void {
     this.direction *= -1;
     this.velocity.x = this.config.speed * this.direction;
+    this.updateModelRotation();
   }
 
   damagesPlayer(player: ICollidable): boolean {
@@ -264,7 +287,10 @@ export class Enemy implements ICollidable {
 
   // Accessors for behaviors
   getDirection(): number { return this.direction; }
-  setDirection(dir: number): void { this.direction = dir; }
+  setDirection(dir: number): void { 
+    this.direction = dir;
+    this.updateModelRotation();
+  }
   setVelocityX(x: number): void { this.velocity.x = x; }
   setVelocityY(y: number): void { this.velocity.y = y; }
   getGrounded(): boolean { return this.grounded; }

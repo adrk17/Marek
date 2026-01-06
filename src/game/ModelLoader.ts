@@ -405,10 +405,12 @@ export class ModelLoader {
 
       // Check if enemy has X3D model
       if (enemy.x3dUrl) {
-        // Create nested transform for model scaling
-        let targetParent: Element = transform;
+        // Create nested transform for model (with id for rotation control)
+        const modelTransform: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
+        modelTransform.setAttribute('id', `${enemy.id}-model`);
+        
+        // Apply scale if provided
         if (enemy.modelScale !== undefined) {
-          const modelTransform: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Transform');
           if (typeof enemy.modelScale === 'number') {
             const s = enemy.modelScale;
             modelTransform.setAttribute('scale', `${s} ${s} ${s}`);
@@ -418,9 +420,20 @@ export class ModelLoader {
             const sz = enemy.modelScale.z ?? 1;
             modelTransform.setAttribute('scale', `${sx} ${sy} ${sz}`);
           }
-          transform.appendChild(modelTransform);
-          targetParent = modelTransform;
         }
+        
+        // Add translation offset to move model down (adjust visually)
+        modelTransform.setAttribute('translation', '0 -0.3 0');
+        
+        // Set initial rotation based on enemy type
+        // Turtle model faces camera by default, needs +90 degree rotation
+        if (enemy.type === 'kacper') {
+          modelTransform.setAttribute('rotation', '0 1 0 1.5708'); // +90 degrees (facing right)
+        } else {
+          modelTransform.setAttribute('rotation', '0 1 0 0'); // Default (facing right)
+        }
+        
+        transform.appendChild(modelTransform);
 
         // Load X3D model
         const inline: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Inline');
@@ -430,9 +443,9 @@ export class ModelLoader {
         });
         inline.addEventListener('error', () => {
           console.warn(`Failed to load X3D model for enemy: ${enemy.x3dUrl}, using default box`);
-          targetParent.appendChild(this.createDefaultEnemyShape(enemy));
+          modelTransform.appendChild(this.createDefaultEnemyShape(enemy));
         });
-        targetParent.appendChild(inline);
+        modelTransform.appendChild(inline);
       } else {
         // Use default box
         transform.appendChild(this.createDefaultEnemyShape(enemy));
