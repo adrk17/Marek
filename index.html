@@ -45,13 +45,10 @@
       <!-- Enemies will be loaded from JSON level file as models -->
 
       <!-- Player - controlled entity, NOT in colliders list -->
-      <transform id="player" translation="0 1 0">
-        <shape>
-          <appearance>
-            <material diffuseColor="0.9 0.25 0.25" specularColor="0.1 0.1 0.1" shininess="0.05"></material>
-          </appearance>
-          <box size="0.8 1.2 0.8"></box>
-        </shape>
+      <transform id="player" translation="0 2 0">
+        <transform id="player-model" scale="1 1 1" rotation="0 1 0 0" translation="0 -0.4 0">
+          <Inline url="/models/racoon.x3d"></Inline>
+        </transform>
       </transform>
 
       <!-- ==================== SKYBOX ==================== -->

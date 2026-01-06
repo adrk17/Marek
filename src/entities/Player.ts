@@ -16,6 +16,7 @@ enum MovementState {
 
 export class Player implements ICollidable {
   private node: Element;
+  private modelNode: Element | null;
   private size: Vec3;
   private position: Vec2;
   private velocity: Vec2 = { x: 0, y: 0 };
@@ -34,6 +35,7 @@ export class Player implements ICollidable {
   private goalSlideActive: boolean = false;
   private goalSlideBottomY: number = 0;
   private goalSlideSpeed: number = 0;
+  private facingRight: boolean = true;
 
   constructor(nodeId: string = 'player', config: PlayerConfig, physics: PhysicsConfig) {
     const element: Element | null = document.getElementById(nodeId);
@@ -42,11 +44,60 @@ export class Player implements ICollidable {
     }
     
     this.node = element;
+    this.modelNode = document.getElementById('player-model');
     this.config = config;
     this.physics = physics;
     this.size = { x: config.size.width, y: config.size.height, z: config.size.depth };
     this.position = { x: config.startPosition.x, y: config.startPosition.y };
     this.deathAnim = new DeathAnimation(config.deathAnimation!);
+  }
+
+  /**
+   * Add debug collider wireframe visualization to player
+   */
+  addDebugCollider(debugConfig: { showColliders: boolean; colliderColor: string; colliderOpacity: number }): void {
+    if (!debugConfig.showColliders) return;
+
+    const shape: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Shape');
+    shape.setAttribute('id', 'player-debug-collider');
+    
+    const appearance: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Appearance');
+    const material: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Material');
+    
+    const color = debugConfig.colliderColor ?? '1 0 0'; // Red for player
+    const opacity = debugConfig.colliderOpacity ?? 0.5;
+    
+    material.setAttribute('diffuseColor', color);
+    material.setAttribute('emissiveColor', color);
+    material.setAttribute('transparency', String(1 - opacity));
+    appearance.appendChild(material);
+    shape.appendChild(appearance);
+
+    // Create IndexedLineSet for wireframe box
+    const hx = this.size.x / 2;
+    const hy = this.size.y / 2;
+    const hz = this.size.z / 2;
+    
+    const lineSet: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'IndexedLineSet');
+    // 8 vertices of the box, 12 edges
+    lineSet.setAttribute('coordIndex', '0 1 2 3 0 -1 4 5 6 7 4 -1 0 4 -1 1 5 -1 2 6 -1 3 7 -1');
+    
+    const coord: Element = document.createElementNS('http://www.web3d.org/specifications/x3d-namespace', 'Coordinate');
+    coord.setAttribute('point', [
+      `${-hx} ${-hy} ${-hz}`, // 0
+      `${hx} ${-hy} ${-hz}`,  // 1
+      `${hx} ${hy} ${-hz}`,   // 2
+      `${-hx} ${hy} ${-hz}`,  // 3
+      `${-hx} ${-hy} ${hz}`,  // 4
+      `${hx} ${-hy} ${hz}`,   // 5
+      `${hx} ${hy} ${hz}`,    // 6
+      `${-hx} ${hy} ${hz}`    // 7
+    ].join(', '));
+    
+    lineSet.appendChild(coord);
+    shape.appendChild(lineSet);
+    
+    this.node.appendChild(shape);
   }
 
   update(deltaTime: number, axisX: number, jump: boolean, colliders: Collider[]): void {
@@ -86,12 +137,34 @@ export class Player implements ICollidable {
 
     setTranslation(this.node, this.position.x, this.position.y, 0);
     
+    // Update model rotation based on movement direction
+    if (axisX > 0 && !this.facingRight) {
+      this.facingRight = true;
+      this.updateModelRotation();
+    } else if (axisX < 0 && this.facingRight) {
+      this.facingRight = false;
+      this.updateModelRotation();
+    }
+    
     // Check if player fell too low
     if (!this.isDead && this.position.y < this.config.deathHeight) {
       this.isDead = true;
       if (this.onDeathCallback) {
         this.onDeathCallback();
       }
+    }
+  }
+
+  private updateModelRotation(vertical: boolean = false): void {
+    if (!this.modelNode) return;
+    
+    if (vertical) {
+      // Vertical orientation for goal animation
+      this.modelNode.setAttribute('rotation', '1 1.57 1.57 1.5708');
+    } else {
+      // Horizontal rotation based on facing direction
+      const yRotation = this.facingRight ? '0' : '3.14159'; // 0 or 180 degrees
+      this.modelNode.setAttribute('rotation', `0 1 0 ${yRotation}`);
     }
   }
 
@@ -231,9 +304,13 @@ export class Player implements ICollidable {
     this.invincibilityTimer = 0;
     this.movementState = MovementState.IDLE;
     this.deathAnim.reset();
+    this.goalSlideActive = false;
+    this.facingRight = true;
     this.node.removeAttribute('rotation');
     this.node.removeAttribute('scale');
     setTranslation(this.node, this.position.x, this.position.y, 0);
+    // Reset model rotation to facing right
+    this.updateModelRotation(false);
   }
 
   onDeath(callback: () => void): void {
@@ -296,6 +373,8 @@ export class Player implements ICollidable {
     this.velocity.y = 0;
     this.position.x = poleX;
     setTranslation(this.node, this.position.x, this.position.y, 0);
+    // Set model to vertical orientation for goal slide
+    this.updateModelRotation(true);
   }
 
   isGoalSliding(): boolean {

@@ -98,6 +98,7 @@ class Game {
     await this.loadLevel(this.manifest.file);
 
     this.player = new Player('player', this.config.player, this.config.physics);
+    this.player.addDebugCollider(this.config.debug);
     this.player.onDeath(() => this.handlePlayerDeath());
     const initialPos = this.player.getPosition();
     this.backgroundManager?.update(initialPos.x, initialPos.y);

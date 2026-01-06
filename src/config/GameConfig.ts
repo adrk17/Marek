@@ -135,8 +135,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     deceleration: 80,
     jumpForce: 20,         
     size: {
-      width: 0.8,
-      height: 1.2,          
+      width: 1.2,
+      height: 0.8,          
       depth: 0.8
     },
     startPosition: {
