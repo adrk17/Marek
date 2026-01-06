@@ -7,13 +7,9 @@ import type { DebugConfig } from '../config/GameConfig';
 // Definitions for level JSON structure
 
 export interface LevelData {
-  name: string;
   models: ModelDefinition[];
   enemies?: EnemyDefinition[];
   backgroundConfig?: BackgroundConfig;
-  description?: string;
-  difficulty?: string;
-  metadata?: Record<string, unknown>;
 }
 
 export interface ModelDefinition {

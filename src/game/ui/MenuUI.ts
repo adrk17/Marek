@@ -30,7 +30,7 @@ export class MenuUI {
       <div class="menu-card">
         <header class="menu-header">
           <div class="menu-header-row">
-            <h1>Marek</h1>
+            <h1>Marek the Raccoon</h1>
             <div class="menu-profile-status">
               <span class="label">Active Profile:</span>
               <span class="value menu-profile-name">Guest</span>

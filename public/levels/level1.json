@@ -1,5 +1,4 @@
 {
-  "name": "Level 1 - All Enemy Types",
   "backgroundConfig": {
     "textureUrl": "/textures/bg/4.png",
     "fallbackColor": "0.5 0.5 0.5",

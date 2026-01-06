@@ -210,7 +210,7 @@ class Game {
       this.movingPlatforms = buildMovingPlatforms(this.colliders, this.config.movingPlatforms);
       this.endlessPlatforms = buildEndlessPlatforms(this.colliders, this.config.endlessPlatforms);
 
-      console.log(`Loaded level: ${levelData.name}`);
+      console.log(`Loaded level: ${this.manifest?.name ?? 'Unknown'}`);
       console.log(`- Models: ${this.colliders.length}`);
       console.log(`- Coins: ${this.coins.length}`);
       console.log(`- Enemies: ${this.enemies.length}`);

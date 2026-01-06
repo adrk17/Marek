@@ -58,9 +58,6 @@ export async function loadLevelData(manifest: LevelManifest): Promise<LevelData>
     throw new Error(`Failed to load level file "${manifest.file}" (HTTP ${response.status})`);
   }
   const level = await response.json() as LevelData;
-  return {
-    ...level,
-    name: level.name ?? manifest.name
-  };
+  return level;
 }
 

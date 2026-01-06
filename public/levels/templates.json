@@ -1,7 +1,4 @@
 {
-  "name": "Template Sandbox",
-  "description": "Debug level for testing and aligning 3D models with colliders",
-  "difficulty": "debug",
   "backgroundConfig": {
     "fallbackColor": "0.2 0.2 0.3"
   },
